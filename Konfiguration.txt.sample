@@ -1,0 +1,66 @@
+			#########################################
+			#										#
+			#			Konfigurationsdatei			#
+			#										#
+			#########################################
+
+	#	Werte innerhalb der Anführungszeichen anpassen
+	#	Pfadangaben mit abschließendem / ( /dein/Pfad/ )
+	#	anzupassen sind alle Zeilen ohne führende # sofern der entsprechende Bereicht auf "aktiv (on)" gesetzt ist
+	#	Möglicherweise ist es notwenig, diese Konfigurationsdatei unter Windowssystemen mit UNIX-Zeilenenden abzuspeichern
+
+##########################################################################################################
+#------------------------- .otrkey's decodieren:
+##########################################################################################################
+decoderactiv="on"								# on => decodieren aktiv / off => decodieren inaktiv
+OTRuser=""										# OTR Benutzername:
+OTRpw=""										# OTR Kennwort:
+OTRkeydir="/volume1/downloads/"					# Verzeichnis mit den OTRKEY-Dateien
+destdir="/volume1/video/+NEU/"					# Ausgabeverzeichnis
+OTRkeydeldir="/volume1/downloads/#recycle/"		# Löschverzeichnis der Quelldateien ! ! ! ACHTUNG ! ! ! gleichnamige vorhandene Dateien in dem Verzeichnis werden überschrieben
+
+
+##########################################################################################################
+#------------------------- .avi's schneiden (Grundlage sind Schnittlisten von http://www.cutlist.at):
+##########################################################################################################
+OTRcutactiv="on"								# on => schneiden aktiv / off => schneiden inaktiv
+
+
+##########################################################################################################
+#------------------------- .avi's / .mp4's umbenennen (alle betroffenen Dateien im Eingabeordner mit "TVOON" im Dateinamen werden umbenannt):
+##########################################################################################################
+OTRrenameactiv="on"								# on => umbenennen aktiv / off => umbenennen inaktiv
+OTRserieninfo="on"								# on => Serieninfo aktiv / off => Serieninfo inaktiv
+												# Die Serieninfo ersetzt den Titel mit >>> SERIE - S01E01 EPISODENTITEL <<<
+
+NameSyntax="§tit [§ylong-§mon-§day §hou-§min §cha] §qua autocut"
+
+	#	Dauer=				§dur 
+	#	Titel=				$tit
+	#	Jahr [4stellig]=	§ylong
+	#	Jahr [2stellig]=	§yshort
+	#	Monat=				§mon
+	#	Tag=				§day
+	#	Stunde=				§hou
+	#	Minute=				§min
+	#	Sender=				§cha
+	#	Qualtität / Format=	§qua
+	#	sowie freier Text und Zeichen ohne / manche Sonderzeichen könnten evtl. Fehlfunktionen hervorrufen
+
+
+##########################################################################################################
+#------------------------- .avi's in native MP4's (MAC OS tauglich) umwandeln:
+##########################################################################################################
+	#	! ! ! ACHTUNG ! ! ! Alle .avi-Dateien im oben definierten Ordner >destdir< werden konvertiert. 
+	#	Bei einer großen Menge an Dateien kann das eine lange Zeit in Anspruch nehmen.
+	#	Es wird lediglich die Audiospur konvertiert.
+
+OTRavi2mp4active="on"							# on => konvertieren aktiv / off => konvertieren inaktiv
+OTRaacqal="112k"								# Ziel-Bitrate der aac-Audiospur (mir reicht 112k also 112 kbit/s)
+
+
+##########################################################################################################
+#------------------------- DSM-Benachrichtigung (funktioniert nur, wenn synOTR vom User "root" aufgerufen wird):
+##########################################################################################################
+dsmtextnotify="on"								# on => Benachrichtigung per Text aktiv / off => inaktiv
+dsmbeepnotify="on"								# on => Benachrichtigung per Beep aktiv / off => inaktiv
