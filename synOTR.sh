@@ -20,7 +20,7 @@ VERSION="0.62" # [2015-01-06]
 #	 -	Kommentare ergaenzt und Kleinigkeiten im Code angepasst
 #	 -	Skript umbenannt nach synOTR.sh
 #	 -	Konfigurationsdatei umbenannt nach synOTR.conf bzw. synOTR.conf.sample
-#	 -  pre-hook Test mit Pattern blubb
+#	 -  pre-hook Test mit Pattern b_l_u_b_b
 #	 -  DRY-Modus eingefuehrt
 #	0.6
 #	 - 	Fehler bei Modellen mit evensport-CPU behoben
