@@ -1,66 +1,96 @@
-			#########################################
-			#										#
-			#			Konfigurationsdatei			#
-			#										#
-			#########################################
+##############################################################################
+#
+# File  :   <linux>:synOTR/synOTR.conf.sample
+# Author:   Original:	synotr@geimist.eu (Stephan Geisler)
+#			ergaenzt:	peddy@gmx.net (Andreas Peters)
+# Date  :   26.04.2015
+# Subj. :   synOTR - Konfigurationsdatei
+#
+#	Werte innerhalb der Anführungszeichen anpassenn
+#	Pfadangaben mit abschliessendem "/" ( Beispiel: /dein/Pfad/ )
+#	anzupassen sind alle Zeilen ohne führendeKommentarzeichen "#",
+#	sofern der entsprechende Bereich auf "aktiv (on)" gesetzt ist.
+#	Möglicherweise ist es notwenig, diese Konfigurationsdatei unte
+#	Windowssystemen mit UNIX-Zeilenenden abzuspeichern.
+#
+#	tabwidth=4
+##############################################################################
 
-	#	Werte innerhalb der Anführungszeichen anpassen
-	#	Pfadangaben mit abschließendem / ( /dein/Pfad/ )
-	#	anzupassen sind alle Zeilen ohne führende # sofern der entsprechende Bereicht auf "aktiv (on)" gesetzt ist
-	#	Möglicherweise ist es notwenig, diese Konfigurationsdatei unter Windowssystemen mit UNIX-Zeilenenden abzuspeichern
+################################
+## Logfilename ueberschrieben
+#LOGFILE=$workdir/synOTR.log
+
+################################
+## PATH anpassen:
+#PATH=$workdir/app/bin:/usr/syno/bin:$PATH
+#export PATH
+
+################################
+## nach neuer Version im Internet suchen
+#CHECKVERSION=false
 
 ##########################################################################################################
-#------------------------- .otrkey's decodieren:
+# .otrkey's Dateien decodieren:
 ##########################################################################################################
-decoderactiv="on"								# on => decodieren aktiv / off => decodieren inaktiv
+DECODERACTIVE=false								# true oder false
 OTRuser=""										# OTR Benutzername:
 OTRpw=""										# OTR Kennwort:
-OTRkeydir="/volume1/downloads/"					# Verzeichnis mit den OTRKEY-Dateien
-destdir="/volume1/video/+NEU/"					# Ausgabeverzeichnis
-OTRkeydeldir="/volume1/downloads/#recycle/"		# Löschverzeichnis der Quelldateien ! ! ! ACHTUNG ! ! ! gleichnamige vorhandene Dateien in dem Verzeichnis werden überschrieben
+OTRKEYdir="/volume1/downloads/"					# Verzeichnis mit den OTRKEY-Dateien
+OTRKEYdeldir="/volume1/downloads/#recycle/"		# Loeschverzeichnis der Quelldateie
+destdir="/volume1/video/FERTIG/"				# Ausgabeverzeichnis, hier landen die fertigen Videodateien
 
 
 ##########################################################################################################
-#------------------------- .avi's schneiden (Grundlage sind Schnittlisten von http://www.cutlist.at):
+# .avi's schneiden (Grundlage sind Schnittlisten von http://www.cutlist.at):
 ##########################################################################################################
-OTRcutactiv="on"								# on => schneiden aktiv / off => schneiden inaktiv
+OTRCUTACTIVE=true								# true oder false
 
 
 ##########################################################################################################
-#------------------------- .avi's / .mp4's umbenennen (alle betroffenen Dateien im Eingabeordner mit "TVOON" im Dateinamen werden umbenannt):
+# .avi's / .mp4's umbenennen (alle betroffenen Dateien im Eingabeordner mit "TVOON" im Dateinamen werden umbenannt):
 ##########################################################################################################
-OTRrenameactiv="on"								# on => umbenennen aktiv / off => umbenennen inaktiv
-OTRserieninfo="on"								# on => Serieninfo aktiv / off => Serieninfo inaktiv
+OTRRENAMEACTIVE=true							# true oder false
+  OTRSERIENINFO=true							# true oder false
 												# Die Serieninfo ersetzt den Titel mit >>> SERIE - S01E01 EPISODENTITEL <<<
 
+##############################
+#	Dauer=				§dur 
+#	Titel=				$tit
+#	Jahr [4stellig]=	§ylong
+#	Jahr [2stellig]=	§yshort
+#	Monat=				§mon
+#	Tag=				§day
+#	Stunde=				§hou
+#	Minute=				§min
+#	Sender=				§cha
+#	Qualtität / Format=§qua
+#	sowie freier Text und Zeichen ohne / manche Sonderzeichen könnten evtl. Fehlfunktionen hervorrufen
 NameSyntax="§tit [§ylong-§mon-§day §hou-§min §cha] §qua autocut"
 
-	#	Dauer=				§dur 
-	#	Titel=				$tit
-	#	Jahr [4stellig]=	§ylong
-	#	Jahr [2stellig]=	§yshort
-	#	Monat=				§mon
-	#	Tag=				§day
-	#	Stunde=				§hou
-	#	Minute=				§min
-	#	Sender=				§cha
-	#	Qualtität / Format=	§qua
-	#	sowie freier Text und Zeichen ohne / manche Sonderzeichen könnten evtl. Fehlfunktionen hervorrufen
+##########################################################################################################
+## .avi's in native MP4's (MAC OS tauglich) umwandeln:
+##########################################################################################################
+#	! ! ! ACHTUNG ! ! ! Alle .avi-Dateien im oben definierten Ordner >destdir< werden konvertiert. 
+#	Bei einer grossen Menge an Dateien kann das eine lange Zeit in Anspruch nehmen.
+#	Es wird lediglich die Audiospur konvertiert.
+OTRAVI2MP4ACTIVE=false							# true oder false
+OTRaacqal="128k"								# Ziel-Bitrate der aac-Audiospur ( 128k also 128 kbit/s)
 
 
 ##########################################################################################################
-#------------------------- .avi's in native MP4's (MAC OS tauglich) umwandeln:
-##########################################################################################################
-	#	! ! ! ACHTUNG ! ! ! Alle .avi-Dateien im oben definierten Ordner >destdir< werden konvertiert. 
-	#	Bei einer großen Menge an Dateien kann das eine lange Zeit in Anspruch nehmen.
-	#	Es wird lediglich die Audiospur konvertiert.
-
-OTRavi2mp4active="on"							# on => konvertieren aktiv / off => konvertieren inaktiv
-OTRaacqal="112k"								# Ziel-Bitrate der aac-Audiospur (mir reicht 112k also 112 kbit/s)
-
-
-##########################################################################################################
-#------------------------- DSM-Benachrichtigung (funktioniert nur, wenn synOTR vom User "root" aufgerufen wird):
+## DSM-Benachrichtigung (funktioniert nur, wenn synOTR vom User "root" aufgerufen wird):
 ##########################################################################################################
 dsmtextnotify="on"								# on => Benachrichtigung per Text aktiv / off => inaktiv
-dsmbeepnotify="on"								# on => Benachrichtigung per Beep aktiv / off => inaktiv
+dsmbeepnotify="off"								# on => Benachrichtigung per Beep aktiv / off => inaktiv
+
+##########################################################################################################
+## Abweichung der Dateiaenderungszeit in Minuten um laufende FTP-Pushauftraege nicht zu decodieren ueberschreiben
+##########################################################################################################
+#timediff="2"
+
+##########################################################################################################
+## Pfad zu DSM-ffmpeg (oder anderer gewünschter Version ueberschreiben:
+##########################################################################################################
+#ffmpeg="/usr/syno/bin/ffmpeg"
+
+### EOF ###
