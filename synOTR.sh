@@ -39,14 +39,17 @@ VERSION="0.62" # [2015-01-06]
 #	- Datei- und Verzeichnisrechte aus dem Skript heraus setzen, damit Freigabe via SMB und AFP wie gewohnt geht
 #
 ##############################################################################
-Script="${0##*/}" ; Script=${Script%*.sh}; ScriptParameter="$@"
+Script="${0##*/}" ; Script=${Script%*.sh}; ScriptParameter="$@"; Scriptpath=${0%/*}
 DRY=	 ## wenn leer, dann werden Kommandos ausgefuehrt oder Parameter "-verbose"
 #DRY=echo ##	mit "echo" werden keine externen Kommandos ausgefuehrt, sondern angezeigt
 
 
 # Arbeitsverzeichnis auslesen und hineinwechseln:
-workdir=$(cd $(dirname $0);pwd)
+#workdir=$(cd $(dirname $0);pwd)
+workdir=$(cd $Scriptpath; pwd -P)	## ??? Fehlerhandling einbauen
+#cd $workdir # &&  echo "Arbeitsverzeichnist ist: $workdir"
 cd $workdir # &&  echo "Arbeitsverzeichnist ist: $workdir"
+APPDIR=$workdir/app
 
 # STD-Logfilename -- wird ggf. in CONFIG-File ueberschrieben
 LOGFILE=$workdir/synOTR.log
@@ -54,20 +57,22 @@ LOGFILE=$workdir/synOTR.log
 # STD-Abweichung der Dateiaenderungszeit in Minuten um laufende FTP-Pushauftraege nicht zu decodieren
 timediff="2"
 
-# STD-Pfad zu DSM-ffmpeg (oder anderer gewünschter Version):
-ffmpeg="/usr/syno/bin/ffmpeg"
-
 # PATH anpassen:
 #PATH=/opt/bin:/opt/sbin:$PATH
 PATH=$workdir/app/bin:/usr/syno/bin:$PATH
 export PATH
+
+# STD-Pfad zu DSM-ffmpeg (oder anderer gewünschter Version):
+ffmpeg="/usr/syno/bin/ffmpeg"
+bash="$APPDIR/bin/bash"
+touch="$APPDIR/bin/touch"
+OTRcut_SH=$APPDIR/OTRcut.sh
 
 #######################################
 # Verbose-Level for logging:
 # 0: do not print anything to console  1: print only errors to console
 # 2: print errors and info to console  3: print errors, info and debug logs to console
 VERBOSE=1
-DEBUG=false
 
 
 #######################################
@@ -94,11 +99,13 @@ RC=0	## globaler Return-Code
 #######################################
 CONFIG=synOTR.conf
 . ./$CONFIG
+if [ $VERBOSE -gt 2 ]; then DEBUG=true ; else  DEBUG=false ; fi
 
 ## Korrektur der Verzeichnisberzeichnungen
 OTRKEYdeldir=${OTRKEYdeldir%/}/
-destdir=${destdir%/}/
-decodedir=${destdir%/}/_decodiert/
+destdir=${destdir%/}
+decodedir=${destdir%/}/_decodiert
+APPDIR=${APPDIR%/}
 
 ##############################################################################
 ## allgemeine Funktionen
@@ -115,6 +122,16 @@ EOT
 	exit 1
 } ## END showhelp ##
 
+
+#################################################
+# Informiert Benutzer, ggf. ueber versch. Kanaele
+senduserinfo () {
+	if [ -z "$1" ]; then echo  "senduserinfo: ohne Information aufgerufen" |tee -a $LOGFILE; return ; fi
+	if [ $dsmtextnotify = "on" ] ; then
+		/usr/syno/bin/synodsmnotify @administrators "synOTR" "$1"
+	fi
+	if [ $dsmbeepnotify = "on" ] ; then echo 2 > /dev/ttyS1 ; fi ## short beep
+} ## END senduserinfo ##
 
 
 #################################################
@@ -189,7 +206,7 @@ checkversion () {
 		echo "Aktuelle Version: $online_version"
 		echo "Die neue Version kann unter 'http://geimist.eu/synOTR/' heruntergeladen werden."
 		message="Es ist eine neue Version von synOTR verfügbar. <br>Verwendete Version: $VERSION <br>Aktuelle Version: $online_version <br><br>Die neue Version kann unter \"<a href=\"http://geimist.eu/synOTR/\">http://geimist.eu/synOTR</a>\" heruntergeladen werden. <a href=\"https://geimist.eu/synOTR/changelog/\">(ChangeLOG)</a><br>"
-		/usr/syno/bin/synodsmnotify @administrators "synOTR" "$message"
+		senduserinfo "$message"
 	else
 		echo "checkversion: es wurde keine neuere Version gefunden. Du nutzt synOTR-Version: $VERSION -- Online-Version: $online_version"
 	fi
@@ -200,44 +217,44 @@ checkversion () {
 OTRdecoder () {
 	log info "==> OTRdecoder:"
 	OTRKEYdir="${OTRKEYdir%/}/"
-	for Datei in $(find "$OTRKEYdir" -maxdepth 1 -name "*.otrkey" -mmin +"$timediff" -type f)
+	for Datei in $(find "$OTRKEYdir" -maxdepth 1 -iname "*.otrkey" -mmin +"$timediff" -type f)
 	do
 		filename=`basename "$Datei"`
 		log info "OTRdecoder: filename: $filename"
 		## eigentliche Decodierung
-		otrdecoderLOG=$($DRY otrdecoder -q -i "$Datei" -o "$decodedir" -e "$OTRuser" -p "$OTRpw" 2>&1)
-		log debug "OTRdecoder: OTRdecoderLOG: $otrdecoderLOG"
-         #	!!!! Rückgabewert "[OTRHelper:] Error: No connection to server!" löscht Dateien, ohne zu dekodieren
+		# ??? pruefen, ob Zieldatei vorhanden, ggf. nicht auspacken oder umbenennen
+#		otrdecoderLOG=$($DRY otrdecoder -q -i "$Datei" -o "$decodedir/" -e "$OTRuser" -p "$OTRpw" 2>&1) ## -q = auch unvollstaendige
+		otrdecoderLOG=$($DRY otrdecoder    -i "$Datei" -o "$decodedir/" -e "$OTRuser" -p "$OTRpw" 2>&1)
+		rc=$?; log debug "otrdecode rc: $rc"	## 0=OK, 255=Fehler, andere Zahlen bisher nicht bekannt
+		log debug "OTRdecoder: $otrdecoderLOG"
+		# ??? otrdecoder: vollstaendiges Fehlerhandling einbauen
+		# ??? Rückgabewert "[OTRHelper:] Error: No connection to server!" löscht Dateien, ohne zu dekodier
 		if [ $(echo $otrdecoderLOG | grep "[OTRHelper:] Error: No connection to server!") ] ; then
 			log error "OTRDecoder: es konnte keine Verbindung zum OTR-Server aufbauen. Datei '$filename' wird uebersprungen."
 			continue ;
 		else
          	$DRY mv "$Datei" "$OTRKEYdeldir"
-			if [ $lastjob -eq 1 ] ; then
-				if [ $dsmtextnotify = "on" ] ; then
-					/usr/syno/bin/synodsmnotify @administrators "synOTR" "$filename ist fertig"
-				fi
-				if [ $dsmbeepnotify = "on" ] ; then echo 2 > /dev/ttyS1 ; fi ## short beep
-			fi
+			if [ $lastjob -eq 1 ] ; then senduserinfo "$filename ist fertig" ; fi
 		fi
 	done
 } ## END OTRdecoder ##
 
 
+
 #################################################
 OTRcut () {
 	log info "==> OTRcut:"
-	for Datei in $(find "$decodedir" -maxdepth 1 -name "*.avi" -o -name "*.mp4" -type f)
+	for Datei in $(find "$decodedir/" -maxdepth 1 -name "*.avi" -o -name "*.mp4" -type f)
 	do
 		filename=`basename "$Datei"`
 		log console "==> OTRcut: schneide '$filename'"
 		if echo "$filename" | grep -q ".mp4"; then
 			log console "$filename [.mp4-Datei] kann mit avisplit / avimerge nicht geschnitten werden"
-			$DRY mv $Datei "$destdir"
+			$DRY mv $Datei "$destdir/"
 			continue		# naechste Datei
 		fi
 		## das eigentliche Schneiden
-   		$DRY bash $workdir/app/OTRcut.sh --force-smart -a -e --delete --toprated -i "$Datei" -o "$destdir" --deldir "$OTRKEYdeldir" --wd $workdir/$CONFIG #--lj $lastjob
+   		$DRY $bash $workdir/app/OTRcut.sh --force-smart -a -e --delete --toprated -i "$Datei" -o "$destdir/" --deldir "$OTRKEYdeldir" --wd $workdir/$CONFIG #--lj $lastjob
 	done
 } ## END OTRcut ##
 
@@ -261,11 +278,11 @@ OTRavi2mp4 () {
 		let audiotypepos=$audiotypepos+7
 		let audiotypeposend=$audiotypepos+2
 		audiocodec=`echo $fileinfo | cut -c $audiotypepos-$audiotypeposend `
-		audiofile="$destdir$title.$audiocodec"
+		audiofile="$destdir/$title.$audiocodec"
 		log find "Audiocodec: $audiocodec"
 
 		if [ $audiocodec = "aac" ] ; then
-			log console "Datei scheint bereits ein mp4 zu sein ==> springe zur nächstn Datei:"
+			log console "Datei scheint bereits ein mp4 zu sein ==> springe zur naechsten Datei:"
 			continue
 		fi
 
@@ -282,7 +299,7 @@ OTRavi2mp4 () {
 				continue ;
 		fi
 		log debug "Videocodec: $videocodec"
-		videofile="$destdir$title.$vExt"
+		videofile="$destdir/$title.$vExt"
 
 		#	-------FRAMERATE:
 		if [ $(echo $fileinfo | grep "50 fps") ] ; then
@@ -313,19 +330,13 @@ OTRavi2mp4 () {
 		$DRY mp4box -add "$videofile" -add "$audiofile" -flat -fps $fps "$pfad$title.mp4"
 
 		#	-------Temp loeschen:
-		$DRY rm $videofile
-		$DRY rm $audiofile
+		$DRY rm $audiofile ; $DRY rm $videofile
 
 		#	-------Original loeschen:
 		$DRY mv "$i" "$OTRKEYdeldir"
 
 		#	-------Fertigstellung melden
-		if [ $lastjob -eq 3 ] ; then
-			if [ $dsmtextnotify = "on" ] ; then
-				/usr/syno/bin/synodsmnotify @administrators "synOTR" "$title ist fertig"
-			fi
-			if [ $dsmbeepnotify = "on" ] ; then echo 2 > /dev/ttyS1 ; fi #short beep
-		fi
+		if [ $lastjob -eq 3 ] ; then senduserinfo "$title ist fertig" ; fi
 	done
 } ## END OTRavi2mp4 ##
 
@@ -425,9 +436,9 @@ OTRrename () {
 			serieninfo=$(curl "http://www.otr-serien.de/myapi/reverseotrkeycheck.php?otrkey=$i&who=synOTR" )
 			# Erfolglosmeldung Serieninfo: <!DOCTYPE html> Keine Serien zuordnung vorhanden
 			if echo "$serieninfo" | grep -q "Keine Serien zuordnung vorhanden"; then
-				log error "Keine Serieninformation für "$title" vorhanden"
-				log error "Es wird 48h lang nach Serieninformationen gesucht. "
-				log error "Nach diesem Zeitraum wird die herkömmliche Umbenennung angewandt."
+				log info "Keine Serieninformation für "$title" vorhanden"
+				log info "Es wird 48h lang nach Serieninformationen gesucht. "
+				log info "Nach diesem Zeitraum wird die herkömmliche Umbenennung angewandt."
 
 				# Vorgebende Zeit nach Serieninformationen suchen - wenn negativ, dann normale Umbenennung
 				filesuche=$(find "$destdir" -maxdepth 1 -name "$sourcename" -mmin +2880)
@@ -482,7 +493,7 @@ OTRrename () {
 		if  $OTRRENAMEACTIVE ; then
 			log info "==> umbenennen:"
 			touch -t $YY$Mo$DD$HH$Min $i 			# Dateidatum auf Ausstrahlungsdatum setzen:
-			if [ -f "$destdir$NewName" ]; then		# Prüfen, ob Zielname bereits vorhanden ist
+			if [ -f "$destdir/$NewName" ]; then		# Prüfen, ob Zielname bereits vorhanden ist
 				log info "Die Datei $NewName ist bereits vorhanden und $filename wird nicht umbenannt."
 			else
 				#	Tags schreiben (MP4 only):
@@ -495,16 +506,11 @@ OTRrename () {
 				#  --artwork
 				#  --genre
 				#	deaktiviert / tmp-Datei wird nicht gegen Original ausgetauscht …
-				# AtomicParsley "$destdir$NewName" --TVNetwork $Channel --TVShowName $serietitle --TVEpisode $episodetitle --TVSeasonNum $season --TVEpisodeNum $episode --title $title
-				$DRY mv -i $i "$destdir$NewName"
+				# AtomicParsley "$destdir/$NewName" --TVNetwork $Channel --TVShowName $serietitle --TVEpisode $episodetitle --TVSeasonNum $season --TVEpisodeNum $episode --title $title
+				$DRY mv $i "$destdir/$NewName"	## ??? Check einbauen, dass vorhandene Dateien nicht ueberschrieben werden,
+												## ??? ggf. unter anderem Dateinamen speichern
 				log info "umbenannt von $filename zu $NewName"
-
-				if [ $lastjob -eq 4 ] ; then
-					if [ $dsmtextnotify = "on" ] ; then
-						/usr/syno/bin/synodsmnotify @administrators "synOTR" "$title ist fertig"
-					fi
-					if [ $dsmbeepnotify = "on" ] ; then echo 2 > /dev/ttyS1 ;fi #short beep
-				fi
+				if [ $lastjob -eq 4 ] ; then senduserinfo "$title ist fertig" ; fi
 			fi
 		fi
 	done
@@ -535,10 +541,12 @@ do
 			[ $VERBOSE -gt 1 ] && log info "aktiviere Schneiden der Filmdateien"
 			;;
 		alles|-alles|--alles)
-			DECODERACTIVE=true
+			DECODERACTIVE=true=true
 			OTRCUTACTIVE=true
+			OTRAVI2MP4ACTIVE=true
+			OTRRENAMEACTIVE=true
 			shift
-			[ $VERBOSE -gt 1 ] && log info "aktiviere alle "
+			[ $VERBOSE -gt 1 ] && log info "aktiviere alle Verarbeitungen"
 			;;
 		hilfe|-hilfe|--hilfe|help|-help|--help)
 			showhelp "Hilfeanzeige:" ; exit 0
@@ -583,13 +591,18 @@ $OTRAVI2MP4ACTIVE && lastjob=3
 if [ ! -d "$OTRKEYdir"		] ; then fehler "Verzeichnis OTRKEYdir '$OTRKEYdir' fehlt, bitte anpassen oder anlegen."		; fi
 if [ ! -d "$OTRKEYdeldir"	] ; then fehler	"Verzeichnis OTRKEYdeldir '$OTRKEYdeldir' fehlt, bitte anpassen oder anlegen."	; fi
 if [ ! -d "$destdir"		] ; then fehler "Verzeichnis destdir '$destdir' fehlt, bitte anpassen oder anlegen."			; fi
-if [ ! -d "$decodedir"		] ; then fehler "Verzeichnis decodedir '${decodedir%/}/' fehlt, bitte anpassen oder anlegen."	; fi
+if [ ! -d "$decodedir"		] ; then fehler "Verzeichnis decodedir '$decodedir' fehlt, bitte anpassen oder anlegen."	; fi
+if [ ! -x "$ffmpeg"			] ; then fehler "Programm ffmpeg '${ffmpeg}' fehlt, bitte Pfad im Skript anpassen"				; fi
+if [ ! -x "$bash"			] ; then fehler "Programm bash '${bash}' fehlt, bitte Pfad im Skript anpassen"				; fi
+if [ ! -x "$touch"			] ; then fehler "Programm touch '${touch}' fehlt, bitte Pfad im Skript anpassen"				; fi
+if [ ! -x "$OTRcut_SH"		] ; then fehler "Shellskript OTRcut_SH '${OTRcut_SH}' fehlt, bitte Pfad im Skript anpassen"				; fi
 if $OTRCUTACTIVE ; then decodedir="$destdir" ; fi
-log debug "OTRKEYdir ist: $OTRKEYdir"
-log debug "OTRKEYdeldir ist: $OTRKEYdeldir"
-log debug "decodedir ist: $decodedir"
-log debug "destdir ist: $destdir"
-
+$DEBUG	&&	printf "   OTRKEYdir ist:\t%s\n"	$OTRKEYdir		| tee -a $LOGFILE
+$DEBUG	&&	printf "OTRKEYdeldir ist:\t%s\n"	$OTRKEYdeldir	| tee -a $LOGFILE
+$DEBUG	&&	printf "   decodedir ist:\t%s\n"	$decodedir		| tee -a $LOGFILE
+$DEBUG	&&	printf "     destdir ist:\t%s\n"	$destdir		| tee -a $LOGFILE
+$DEBUG	&&	log debug "DECODERACTIVE: $DECODERACTIVE"
+$DEBUG	&&	log debug "OTRCUTACTIVE: $OTRCUTACTIVE"
 
 ##############################################################################
 ##	Hauptprogramm
