@@ -225,7 +225,7 @@ OTRdecoder () {
 		# ??? pruefen, ob Zieldatei vorhanden, ggf. nicht auspacken oder umbenennen
 #		otrdecoderLOG=$($DRY otrdecoder -q -i "$Datei" -o "$decodedir/" -e "$OTRuser" -p "$OTRpw" 2>&1) ## -q = auch unvollstaendige
 		otrdecoderLOG=$($DRY otrdecoder    -i "$Datei" -o "$decodedir/" -e "$OTRuser" -p "$OTRpw" 2>&1)
-		rc=$?; log debug "otrdecode rc: $rc"	## 0=OK, 255=Fehler, andere Zahlen bisher nicht bekannt
+		rc=$?; log debug "OTRdecoder: otrdecoder rc: $rc"	## 0=OK, 255=Fehler, andere Zahlen bisher nicht bekannt
 		log debug "OTRdecoder: $otrdecoderLOG"
 		# ??? otrdecoder: vollstaendiges Fehlerhandling einbauen
 		# ??? Rückgabewert "[OTRHelper:] Error: No connection to server!" löscht Dateien, ohne zu dekodier
@@ -269,19 +269,16 @@ OTRavi2mp4 () {
 	do
 		title=`basename $i`
 		pfad=`dirname $i`
-		pfad="$pfad/"
 		title=${title%.*}
+		fileinfo=$(ffmpeg -i "$i" 2>&1)
 
 		#	-------AUDIOCODEC:
-		fileinfo=$(ffmpeg -i "$i" 2>&1)
-		audiotypepos=`echo $fileinfo | awk '{ print index($0, "Audio: ") }'`
-		let audiotypepos=$audiotypepos+7
-		let audiotypeposend=$audiotypepos+2
-		audiocodec=`echo $fileinfo | cut -c $audiotypepos-$audiotypeposend `
+		audiocodec=$(echo $fileinfo | egrep  -o 'Audio: +\w+ +' | cut -f2 -d' ')
 		audiofile="$destdir/$title.$audiocodec"
-		log find "Audiocodec: $audiocodec"
+		log debug "OTRavi2mp4: audiocodec: $audiocodec"
+		log debug "OTRavi2mp4:  audiofile: $audiofile"
 
-		if [ $audiocodec = "aac" ] ; then
+		if [ "$audiocodec" == "aac" ] ; then
 			log console "Datei scheint bereits ein mp4 zu sein ==> springe zur naechsten Datei:"
 			continue
 		fi
@@ -298,8 +295,9 @@ OTRavi2mp4 () {
 				log console "Videoformat nicht erkannt. ==> springe zu nächster Datei:"
 				continue ;
 		fi
-		log debug "Videocodec: $videocodec"
 		videofile="$destdir/$title.$vExt"
+		log debug "OTRavi2mp4: Videocodec: $videocodec"
+		log debug "OTRavi2mp4:  videofile: $videofile"
 
 		#	-------FRAMERATE:
 		if [ $(echo $fileinfo | grep "50 fps") ] ; then
@@ -309,34 +307,32 @@ OTRavi2mp4 () {
 			else
 				fps="25"
 		fi
-		log debug "Framerate ist: $fps"
+		log debug "OTRavi2mp4: Framerate ist: $fps"
 
 	#	-------DEMUX:
 		#	-------Audio extrahieren / konvertieren:
-		$DRY $ffmpeg -i "$i" -acodec copy -vn $audiofile
-		if [ $audiocodec != "aac" ] ; then
-			$DRY $ffmpeg -threads 2 -i "$audiofile" -acodec libfaac -ab "${OTRaacqal%k}k" "$audiofile.m4a" 	#libfaac > für syno-ffmpeg
-#			$DRY $ffmpeg -threads 2 -i "$audiofile" -c:a libfdk_aac -b:a "${OTRaacqal%k}k" "$audiofile.m4a"	# für libfdk_aac
-			$DRY rm $audiofile
-			audiofile="$audiofile.m4a"
-		fi
+		$DRY $ffmpeg -threads auto -i "$i" -acodec copy -vn $audiofile
+		$DRY $ffmpeg -threads auto -i "$audiofile" -acodec libfaac -ab "${OTRaacqal%k}k" "$audiofile.m4a" 	#libfaac > für syno-ffmpeg
+#		$DRY $ffmpeg -threads 2 -i "$audiofile" -acodec libfaac -ab "${OTRaacqal%k}k" "$audiofile.m4a" 	#libfaac > für syno-ffmpeg
+#		$DRY $ffmpeg -threads 2 -i "$audiofile" -c:a libfdk_aac -b:a "${OTRaacqal%k}k" "$audiofile.m4a"	# für libfdk_aac
+		$DRY rm $audiofile
+		audiofile="$audiofile.m4a"
+		log debug "OTRavi2mp4:  audiofile: $audiofile"
 
 		#	-------Video extrahieren:
-		$DRY $ffmpeg -i "$i" -an -vcodec copy $videofile
+		$DRY $ffmpeg -threads auto -i "$i" -an -vcodec copy $videofile
 
 	#	-------REMUX:
-		log debug "audiofile ist: $audiofile"
-		log debug "videofile ist: $videofile"
-		$DRY mp4box -add "$videofile" -add "$audiofile" -flat -fps $fps "$pfad$title.mp4"
+		$DRY mp4box -add "$videofile" -add "$audiofile" -flat -fps $fps "$pfad/$title.mp4"
 
 		#	-------Temp loeschen:
-		$DRY rm $audiofile ; $DRY rm $videofile
+		$DRY rm -v $audiofile ; $DRY rm -v $videofile
 
-		#	-------Original loeschen:
-		$DRY mv "$i" "$OTRKEYdeldir"
+		#	-------Original umbenennen
+		$DRY mv "$i" "$OTRKEYdeldir/"
 
 		#	-------Fertigstellung melden
-		if [ $lastjob -eq 3 ] ; then senduserinfo "$title ist fertig" ; fi
+		if [ $lastjob -eq 3 ] ; then senduserinfo "OTRavi2mp4: $title ist fertig" ; fi
 	done
 } ## END OTRavi2mp4 ##
 
@@ -348,9 +344,9 @@ OTRrename () {
 	do
 		sourcename=`basename "$i"`
 		filename=`basename "$i"`
-		log debug "==> $filename:"
+		log debug "OTRrename: filename: $filename:"
 		fileextension="${filename##*.}"
-		log debug "fileextension ist: $fileextension"
+		log debug "OTRrename: fileextension: $fileextension"
 		# unerwünschte Zeichen korrigieren (u.a. durch OTRcut):
 		# Der_Tatortreiniger_14.11.21_22-40_orf3_30_TVOON_DE.HQ-cut.avi
 		# Der_Tatortreiniger_14.12.03_22-00_ndr_30_TVOON_DE.mpg.HD.avi-cut.avi
@@ -387,49 +383,50 @@ OTRrename () {
 		title=`echo $filename | cut -c -$titleend `
 		title=`echo $title | sed 's/__/ - /g'`
 		title=`echo $title | sed 's/_/ /g'`
-		log debug "Titel ist: $title"
+		log debug "OTRrename: Titel: $title"
 
 		#	------------------ Jahr:
 		YYbeginn=$(($ersterpunkt-2))
 		YYend=$(($ersterpunkt-1))
 		YY=`echo $filename | cut -c $YYbeginn-$YYend `
-		log debug "YY ist $YY"
+		log debug "OTRrename: YY: $YY"
 		YYYY="20$YY"
-		log debug "YYYY ist $YYYY"
+		log debug "OTRrename: YYYY: $YYYY"
 
 		#	------------------ Monat:
 		Mobeginn=$(($ersterpunkt+1))
 		Moend=$(($ersterpunkt+2))
 		Mo=`echo $filename | cut -c $Mobeginn-$Moend `
-		log debug "Monat ist $Mo"
+		log debug "OTRrename: Monat: $Mo"
 
 		#	------------------ Tag:
 		DDbeginn=$(($ersterpunkt+4))
 		DDend=$(($ersterpunkt+5))
 		DD=`echo $filename | cut -c $DDbeginn-$DDend `
-		log debug "Tag ist $DD"
+		log debug "OTRrename: Tag: $DD"
 
 		#	------------------ Stunde:
 		HHbeginn=$(($ersterpunkt+7))
 		HHend=$(($ersterpunkt+8))
 		HH=`echo $filename | cut -c $HHbeginn-$HHend `
-		log debug "Stunde ist $HH"
+		log debug "OTRrename: Stunde: $HH"
 
 		#	------------------ Minute:
 		Minbeginn=$(($ersterpunkt+10))
 		Minend=$(($ersterpunkt+11))
 		Min=`echo $filename | cut -c $Minbeginn-$Minend `
-		log debug "Minute ist $Min"
+		log debug "OTRrename: Minute: $Min"
 
 		#	------------------ Dauer:
 		duration=`echo $film_ohne_ende | sed 's/.*_ *//;T;s/ *_.*//'`
-		log debug "Dauer ist $duration"
+		log debug "OTRrename:Dauer: $duration"
 
 		#	------------------ Sender:
 		Channel=$(echo "$filename" | rev | awk -F '_' '{print $4}' | rev)
-		log debug "Sender ist $Channel"
+		log debug "OTRrename: Sender: $Channel"
 
 		NewName=$NameSyntax		# Muster aus Konfiguration laden
+		log debug "OTRrename: NameSyntax: $NameSyntax"
 
 		# Serieninformationen holen - VIELEN DANK AN Daniel Dieth VON www.otr-serien.de :
 		if $OTRSERIENINFO ; then
@@ -454,19 +451,19 @@ OTRrename () {
 				serieninfo=`echo $serieninfo | sed "s/<!DOCTYPE html>//g" | sed 's/\\\u00e4/ä/g' | sed 's/\\\u00f6/ö/g' | sed 's/\\\u00c4/Ä/g' | sed 's/\\\u00d6/Ö/g' | sed 's/\\\u00fC/ü/g' | sed 's/\\\u00dC/Ü/g' | sed 's/\\\u00dF/ß/g' `
 
 				OTRID=`echo "$serieninfo" | awk -F, '{print $1}' | awk -F: '{print $2}' | sed "s/\"//g"`
-				log debug "OTRID: $OTRID"
+				log debug "OTRrename: OTRID: $OTRID"
 				serietitle=`echo "$serieninfo" | jq -r '.Serie'`		# jq ist ein Kommandozeilen-JSON-Parser
-				log debug "serietitle: $serietitle"
+				log debug "OTRrename: serietitle: $serietitle"
 				season=`echo "$serieninfo" | awk -F, '{print $3}' | awk -F: '{print $2}' | sed "s/\"//g"`
 				season="$(printf '%02d' "$season")"		# 2stellig mit führender Null
-				log debug "season: $season"
+				log debug "OTRrename: season: $season"
 				episode=`echo "$serieninfo" | awk -F, '{print $4}' | awk -F: '{print $2}' | sed "s/\"//g"`
 				episode="$(printf '%02d' "$episode")"	# 2stellig mit führender Null
-				log debug "episode: $episode"
+				log debug "OTRrename: episode: $episode"
 				episodetitle=`echo "$serieninfo" | jq -r '.Folgenname'`
-				log debug "episodetitle: $episodetitle"
+				log debug "OTRrename: episodetitle: $episodetitle"
 				description=`echo "$serieninfo" | jq -r '.Folgenbeschreibung'`
-				log debug "description: $description"
+				log debug "OTRrename: description: $description"
 
 				title="$serietitle - S${season}E${episode} $episodetitle"
 				NewName=`echo $NewName | sed "s/§tit/${title}/g"`
@@ -487,31 +484,29 @@ OTRrename () {
 		NewName=`echo $NewName | sed "s/§qua/${format}/g"`
 
 		NewName="$NewName.$fileextension"
-		log debug "Neuer Dateiname ist $NewName"
+		log debug "OTRrename: Neuer Dateiname ist $NewName"
 
 
-		if  $OTRRENAMEACTIVE ; then
-			log info "==> umbenennen:"
-			touch -t $YY$Mo$DD$HH$Min $i 			# Dateidatum auf Ausstrahlungsdatum setzen:
-			if [ -f "$destdir/$NewName" ]; then		# Prüfen, ob Zielname bereits vorhanden ist
-				log info "Die Datei $NewName ist bereits vorhanden und $filename wird nicht umbenannt."
-			else
-				#	Tags schreiben (MP4 only):
-				#  --TVNetwork    (string)     Set the TV Network name
-				#  --TVShowName   (string)     Set the TV Show name
-				#  --TVEpisode    (string)     Set the TV episode/production code
-				#  --TVSeasonNum  (number)     Set the TV Season number
-				#  --TVEpisodeNum (number)     Set the TV Episode number
-				#  --description
-				#  --artwork
-				#  --genre
-				#	deaktiviert / tmp-Datei wird nicht gegen Original ausgetauscht …
-				# AtomicParsley "$destdir/$NewName" --TVNetwork $Channel --TVShowName $serietitle --TVEpisode $episodetitle --TVSeasonNum $season --TVEpisodeNum $episode --title $title
-				$DRY mv $i "$destdir/$NewName"	## ??? Check einbauen, dass vorhandene Dateien nicht ueberschrieben werden,
-												## ??? ggf. unter anderem Dateinamen speichern
-				log info "umbenannt von $filename zu $NewName"
-				if [ $lastjob -eq 4 ] ; then senduserinfo "$title ist fertig" ; fi
-			fi
+		log info ":OTRrename: umbenennen:"
+		touch -t $YY$Mo$DD$HH$Min $i 			# Dateidatum auf Ausstrahlungsdatum setzen:
+		if [ -f "$destdir/$NewName" ]; then		# Prüfen, ob Zielname bereits vorhanden ist
+			log info "Die Datei $NewName ist bereits vorhanden und $filename wird nicht umbenannt."
+		else
+			#	Tags schreiben (MP4 only):
+			#  --TVNetwork    (string)     Set the TV Network name
+			#  --TVShowName   (string)     Set the TV Show name
+			#  --TVEpisode    (string)     Set the TV episode/production code
+			#  --TVSeasonNum  (number)     Set the TV Season number
+			#  --TVEpisodeNum (number)     Set the TV Episode number
+			#  --description
+			#  --artwork
+			#  --genre
+			#	deaktiviert / tmp-Datei wird nicht gegen Original ausgetauscht …
+			# AtomicParsley "$destdir/$NewName" --TVNetwork $Channel --TVShowName $serietitle --TVEpisode $episodetitle --TVSeasonNum $season --TVEpisodeNum $episode --title $title
+			$DRY mv $i "$destdir/$NewName"	## ??? Check einbauen, dass vorhandene Dateien nicht ueberschrieben werden,
+											## ??? ggf. unter anderem Dateinamen speichern
+			log info "umbenannt von $filename zu $NewName"
+			if [ $lastjob -eq 4 ] ; then senduserinfo "OTRrename: $title ist fertig" ; fi
 		fi
 	done
 } ## END OTRrename ##
@@ -541,7 +536,7 @@ do
 			[ $VERBOSE -gt 1 ] && log info "aktiviere Schneiden der Filmdateien"
 			;;
 		alles|-alles|--alles)
-			DECODERACTIVE=true=true
+			DECODERACTIVE=true
 			OTRCUTACTIVE=true
 			OTRAVI2MP4ACTIVE=true
 			OTRRENAMEACTIVE=true
