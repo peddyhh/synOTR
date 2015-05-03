@@ -22,7 +22,7 @@
 
 version=20150503	# Die Version von OtrCut, Format: yyyymmdd, yyyy=Jahr mm=Monat dd=Tag
 LocalCutlistOkay=no	# Ist die lokale Cutlist vorhanden?
-input=()	# Eingabedatei/en
+input=""	# Eingabedatei/en
 CutProg=""	# Zu verwendendes Schneideprogramm
 LocalCutlistName=""	#Name der lokalen Cutlist
 format=""	# Um welches Format handelt es sich? AVI, HQ, mp4
@@ -87,7 +87,7 @@ fi
 
 #################################################
 #Diese Funktion gibt die Hilfe aus
-function showhelp () {
+showhelp () {
 cat <<EOT
 OtrCut Version: $version
 
@@ -155,7 +155,7 @@ exit 0
 
 #################################################
 #Diese Funktion sucht nach einer neuen Version von OtrCut
-function update () {
+update () {
 	online_version=$(wget -q -O - http://otrcut.siggimania4u.de/version | /usr/bin/tr -d "\r")
 	#online_version="0.0" ## URL funktioniert nicht mehr
 	if [ "$online_version" -gt "$version" ]; then
@@ -177,7 +177,7 @@ function update () {
 ##############################################################################
 while [ ! -z "$1" ]; do
 	case $1 in
-		-i | --input )	input=("${input[@]}" "$2")
+		-i | --input )	input="$input $2"
 				shift ;;
 		-a | --avisplit )	UseAvidemux=no ;;
 		-e | --error )	HaltByErrors=yes ;;
@@ -211,32 +211,27 @@ done
 
 
 # Konfiguration für synOTR sourcen:
-. $synotrconf
-
+. $synotrconf ### ??? noch besser verankern, z.B. fuer Standaloneaufruf
 echo "detailierte Ausgabe aktiv: $verbose"
+
 
 #################################################
 #Diese Funktion gibt die Warnung bezüglich der Löschung von $tmp aus
-function warnung () {
+warnung () {
 	if [ "$warn" == "yes" ]; then
 		echo -e "${rot}"
 		echo "ACHTUNG!!!"
 		echo "Das Script wird alle Dateien in $tmp/otrcut löschen!"
 		echo "Sie haben 5 Sekunden um das Script über STRG+C abzubrechen"
-
-		for (( I=5; I >= 1 ; I-- )); do
-			echo -n "$I "
-			sleep 1
-		done
-		echo -e "${normal}"
-		echo ""
-		echo ""
+		i=0;
+		while [ $i -lt 6 ]; do i=$(( i + 1 )); echo -n "$i " ; sleep 1 ; done
+		echo -e "${normal}\n\n\n"
 	fi
 } ## END  ##
 
 #################################################
 #Diese Funktion gibt einen Hinweis zur Dateinamensübergabe aus
-function datei () {
+datei () {
 	echo -e "${gelb}"
 	echo "ACHTUNG!!!"
 	echo "Die Eingabedateien müssen entweder ohne führende Verzeichnise "
@@ -251,7 +246,7 @@ function datei () {
 
 #################################################
 #Diese Funktion überprüft verschiedene Einstellungen
-function test () {
+test () {
 	#Hier wird überprüft ob eine Eingabedatei angegeben ist
 	if [ -z "$i" ]; then
 		echo "${rot}Es wurde keine Eingabedatei angegeben!${normal}"
@@ -362,10 +357,10 @@ function test () {
 
 #################################################
 #Diese Funktion überprüft ob avidemux installiert ist
-function software () {
+software () {
 	if [ "$UseAvidemux" == "yes" ]; then
 		for s in avidemux2_cli avidemux2_qt4 avidemux2_gtk avidemux2 avidemux; do
-			if [ -z $CutProg ]; then
+			if [ -z "$CutProg" ]; then
 				echo -n "Überprüfe ob $s installiert ist --> "
 				if type -t $s >> /dev/null; then
 					echo -e "${gruen}okay${normal}"
@@ -375,7 +370,7 @@ function software () {
 				fi
 			fi
 		done
-		if [ -z $CutProg ]; then
+		if [ -z "$CutProg" ]; then
 			echo -e "${rot}Bitte installieren sie avidemux, oder verwenden sie die Optione \"-a\"!${normal}"
 			exit 1
 		fi
@@ -384,8 +379,7 @@ function software () {
 	#Hier wird überprüft ob avisplit und avimerge installiert sind
 	if [ "$UseAvidemux" == "no" ]; then
 		for p in $appdir/bin/avisplit $appdir/bin/avimerge; do
-		#for p in avisplit avimerge; do
-			echo -n "Überprüfe ob $p installiert ist --> "
+			echo -n "Ueberprüfe ob $p installiert ist --> "
 			#if type -t $p >> $appdir/bin; then
 			if type -t $p >> /dev/null; then
 				echo -e "${gruen}okay${normal}"
@@ -399,7 +393,7 @@ function software () {
 	fi
 
 	#Hier wird überprüft ob date zum umrechnen der Zeit benutzt werden kann
-	echo -n "Überprüfe welche Methode zum Umrechnen der Zeit benutzt wird --> "
+	echo -n "Ueberprüfe welche Methode zum Umrechnen der Zeit benutzt wird --> "
 	date_var=$(date -u -d @120 +%T)
 	if [ "$date_var" == "00:02:00" ]; then
 		echo -e "${blau}date${normal}"
@@ -426,12 +420,12 @@ function software () {
 		echo -e "${rot}Passwort wurde nicht gesetzt.${normal}"
 		exit 1
 	fi
-	fi
+fi
 } ## END software ##
 
 #################################################
 #Diese Funktion definiert den Cutlist- und Dateinamen und üperprüft um welches Dateiformat es sich handelt
-function name () {
+name () {
 	film=$i	#Der komplette Filmname und gegebenfalls der Pfad
 	film_ohne_anfang=$i
 	#Für Avidemux <=2.5 muss der komplette Pfad angegeben werden
@@ -496,7 +490,7 @@ function name () {
 
 #################################################
 #In dieser Funktion wird die lokale Cutlist überprüft
-function local () {
+local () {
 	local_cutlists=$(ls *.cutlist)	#Variable mit allen Cutlists in $PWD
 	filesize=$(ls -l "$film" | awk '{ print $5 }') #Dateigröße des Filmes
 	let goodCount=0	#Passende Cutlists
@@ -546,7 +540,6 @@ function local () {
 		echo ""
 		let number=1
 		for (( i=1; i <= $goodCount ; i++ )); do
-
 			echo "$number: ${namelocal[$number]}"
 			let number++
 		done
@@ -566,7 +559,7 @@ function local () {
 
 #################################################
 #In dieser Funktion wird geprüft, ob die Cutlist okay ist
-function test_cutlist () {
+test_cutlist () {
 	let cutlist_size=$(ls -l "$tmp/$CUTLIST" | awk '{ print $5 }')
 	if [ "$cutlist_size" -lt "100" ]; then
 		cutlist_okay=no
@@ -578,7 +571,7 @@ function test_cutlist () {
 
 #################################################
 # In dieser Funktion wird versucht eine Cutlist aus den Internet zu laden
-function load () {
+load () {
 	if [ "$personal" == "yes" ]; then
 		server=$personalurl
 	else
@@ -812,7 +805,7 @@ function load () {
 
 #################################################
 #Hier wird überprüft um welches Cutlist-Format es sich handelt
-function format () {
+format () {
 	echo -n "Ueberpruefe um welches Format es sich handelt --> "
 	if cat "$tmp/$CUTLIST" | grep "StartFrame=" >> /dev/null; then
 		echo -e "${blau}Frames${normal}"
@@ -834,7 +827,7 @@ function format () {
 
 #################################################
 #Hier wir die Cutlist überprüft, auf z.B. EPGErrors, MissingEnding, MissingVideo, ...
-function cutlist_error () {
+cutlist_error () {
 	#Diese Variable beinhaltet alle möglichen Fehler
 	errors="EPGError MissingBeginning MissingEnding MissingVideo MissingAudio OtherError"
 	for e in $errors; do
@@ -862,7 +855,7 @@ function cutlist_error () {
 #################################################
 #Hier wird geprüft, welches Seitenverhältnis der Film hat.
 #Danke hierfür an MKay aus dem OTR-Forum
-function aspectratio () {
+aspectratio () {
 	echo -n "Ermittles Seitenverhältnis --> "
 
 	aspectR=$(
@@ -917,7 +910,7 @@ function aspectratio () {
 #################################################
 #Hier wird geprüft, welche Bildrate der Film hat.
 #Florian Knodt <www.adlerweb.info>
-function fps () {
+fps () {
 	echo -n "Ermittles Bildrate --> "
 
 	fps=50
@@ -929,7 +922,7 @@ function fps () {
 
 #################################################
 #Hier wird nun die Zeit ins richtige Format für avisplit umgerechnet
-function time1 () {
+time1 () {
 time=""
 let cut_anzahl=$(cat "$tmp/$CUTLIST" | grep "NoOfCuts" | cut -d"=" -f2 | /usr/bin/tr -d "\r")
 echo "####Auflistung der Cuts####"
@@ -976,7 +969,7 @@ sleep 1
 
 #################################################
 #Hier wird nun die Zeit ins richtige Format für avisplit umgerechnet, falls die date-Variante nicht funktioniert
-function time2 () {
+time2 () {
 time=""
 let cut_anzahl=$(cat "$tmp/$CUTLIST" | grep "NoOfCuts" | cut -d= -f2 | /usr/bin/tr -d "\r")
 echo "#####Auflistung der Cuts#####"
@@ -1043,7 +1036,7 @@ sleep 1
 
 #################################################
 #Hier wird nun, falls aviplit/avimerge gewählt wurde, avisplit und avimerge gestartet
-function split () {
+split () {
 echo "Uebergebe die Cuts an avisplit/avimerge"
 
 if [ $decoded == "yes" ]; then
@@ -1096,7 +1089,7 @@ fi
 #################################################
 #In dieser Funktion wird der Projektanfang definiert
 # wird in demux verwendet ??? Rueckbau nach demux ???
-function start1 () {
+start1 () {
 cat << EOF
 //AD <- Needed to identify//
 var app = new Avidemux();
@@ -1108,7 +1101,7 @@ EOF
 
 #################################################
 # wird in demux verwendet ??? Rueckbau nach demux ???
-function start2 () {
+start2 () {
 cat << EOF
 //$cut_anzahl segments
 app.clearSegments();
@@ -1117,7 +1110,7 @@ EOF
 
 #################################################
 # wird in demux verwendet ??? Rueckbau nach demux ???
-function ende () {
+ende () {
 fpsjs=$(($fps*1000))
 cat << EOF
 
@@ -1147,7 +1140,7 @@ EOF
 } ## END ende  ##
 
 #################################################
-function ende_new () {
+ende_new () {
 fpsjs=$(($fps*1000))
 cat << EOF
 
@@ -1178,7 +1171,7 @@ EOF
 
 #################################################
 #Hier wird nun, fals avidemux gewählt wurde, avidemux gestartet
-function demux () {
+demux () {
 	start1 >> "$tmp/avidemux.js"
 	
 	if [ "$ad_version" == "old" ]; then
@@ -1297,7 +1290,7 @@ function demux () {
 
 #################################################
 #Hier wird nun, wenn gewünscht, eine Bewertung für die Cutlist abgegeben
-function bewertung () {
+bewertung () {
 	echo ""
 	echo "Sie können nun eine Bewertung für die Cutlist abgeben."
 	echo "Folgende Noten stehen zur verfügung:"
@@ -1351,7 +1344,7 @@ function bewertung () {
 
 #################################################
 # Hier wird ein Otrkey-File dekodiert, falls es gewünscht ist
-function decode () {
+decode () {
 	if echo $i | grep -q .otrkey; then
 		if [ ! "$email_checked" == "yes" ]; then
 			if [ "$email" == "" ]; then
@@ -1380,7 +1373,7 @@ function decode () {
 
 #################################################
 # Hier werden nun die temporären Dateien gelöscht
-function del_tmp () {
+del_tmp () {
 	if [ "$tmp" == "" ] || [ "$tmp" == "/" ] || [ "$tmp" == "/home" ]; then
 		echo -e "${rot}Achtung, bitte überprüfen Sie die Einstellung von \$tmp${normal}"
 		exit 1
@@ -1405,7 +1398,7 @@ datei
 #   	echo "Verwende http://cutlist.mbod.net als Server"
 #fi
 software
-for i in "${input[@]}"; do
+for i in ${input}; do
 	test
 	del_tmp
 	decode
