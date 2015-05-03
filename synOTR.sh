@@ -8,7 +8,12 @@
 # Subj. :   Dekodieren und Schneiden von OTR-Dateien auf eine Synology-Maschine
 #
 #	Changelog:
-VERSION="0.62" # [2015-01-06]
+VERSION="0.63" # [2015-01-06]
+		## ffmpeg -i Ally\ McBeal\ -\ S01E01\ Am\ Anfang\ war\ das\ Feuer\ \[2013-09-09\ 20-15\ sixx\]\ LQ\ autocut.mp4  -metadata title="TITLE" -metadata artist="ARTIST" -metadata date=DATE -metadata genre="GENRE" -metadata comment="COMMENT" -acodec copy -vcodec copy  bla.mp4
+		## ./mp4box -h meta
+#	0.63
+#	 -	Code weiter umformiert und kuerzer/praegnanter geschrieben, zwecks Uebersichtlichkeit
+#	 -	Checks eingebaut
 #	0.62
 #	 -	Whitespaces am Ende einer Zeile entfernt
 #	 -	Aufrufparameter eingefuehrt, ohne Parameter wird die Hilfe angezeigt
@@ -83,7 +88,7 @@ DECODERACTIVE=false
 OTRCUTACTIVE=false
 OTRAVI2MP4ACTIVE=false
 OTRRENAMEACTIVE=false
-OTRSERIENINFO=false
+OTRSERIENINFO=true
 OTRuser=
 OTRpw=
 OTRKEYdeldir=./
@@ -219,7 +224,7 @@ OTRdecoder () {
 	OTRKEYdir="${OTRKEYdir%/}/"
 	for Datei in $(find "$OTRKEYdir" -maxdepth 1 -iname "*.otrkey" -mmin +"$timediff" -type f)
 	do
-		filename=`basename "$Datei"`
+		filename=$(basename "$Datei")
 		log info "OTRdecoder: filename: $filename"
 		## eigentliche Decodierung
 		# ??? pruefen, ob Zieldatei vorhanden, ggf. nicht auspacken oder umbenennen
@@ -246,7 +251,7 @@ OTRcut () {
 	log info "==> OTRcut:"
 	for Datei in $(find "$decodedir/" -maxdepth 1 -name "*.avi" -o -name "*.mp4" -type f)
 	do
-		filename=`basename "$Datei"`
+		filename=$(basename "$Datei")
 		log console "==> OTRcut: schneide '$filename'"
 		if echo "$filename" | grep -q ".mp4"; then
 			log console "$filename [.mp4-Datei] kann mit avisplit / avimerge nicht geschnitten werden"
@@ -267,8 +272,8 @@ OTRavi2mp4 () {
 	"
 	for i in $(find "$destdir" -maxdepth 1 -name "*.avi" -type f)
 	do
-		title=`basename $i`
-		pfad=`dirname $i`
+		title=$(basename $i)
+		pfad=$(dirname $i)
 		title=${title%.*}
 		fileinfo=$(ffmpeg -i "$i" 2>&1)
 
@@ -342,21 +347,21 @@ OTRrename () {
 	log info "==> OTRrename:"
 	for i in $(find "$destdir" -maxdepth 1 -name "*TVOON*avi" -o -name "*TVOON*mp4" -type f)
 	do
-		sourcename=`basename "$i"`
-		filename=`basename "$i"`
+		sourcename=$(basename "$i")
+		filename=$(basename "$i")
 		log debug "OTRrename: filename: $filename:"
 		fileextension="${filename##*.}"
 		log debug "OTRrename: fileextension: $fileextension"
 		# unerwünschte Zeichen korrigieren (u.a. durch OTRcut):
 		# Der_Tatortreiniger_14.11.21_22-40_orf3_30_TVOON_DE.HQ-cut.avi
 		# Der_Tatortreiniger_14.12.03_22-00_ndr_30_TVOON_DE.mpg.HD.avi-cut.avi
-		filename=`echo $filename | sed 's/HQ-cut/mpg.HQ/g'`
-		filename=`echo $filename | sed 's/HD-cut/mpg.HD/g'`
-	#	filename=`echo $filename | sed 's/.avi-cut//g'`
-		filename=`echo $filename | sed 's/mpg.HD.avi-cut.avi/mpg.HD.avi/g'`
-	#	filename=`echo $filename | sed 's/mpg.HD.avi-cut./mpg.HD./g'`
-		filename=`echo $filename | sed 's/DE-cut/DE.mpg/g'`
-		#filename=`echo $filename | sed 's///g'`	# mp4 fehlt noch
+		filename=$(echo $filename | sed 's/HQ-cut/mpg.HQ/g')
+		filename=$(echo $filename | sed 's/HD-cut/mpg.HD/g')
+	#	filename=$(echo $filename | sed 's/.avi-cut//g')
+		filename=$(echo $filename | sed 's/mpg.HD.avi-cut.avi/mpg.HD.avi/g')
+	#	filename=$(echo $filename | sed 's/mpg.HD.avi-cut./mpg.HD./g')
+		filename=$(echo $filename | sed 's/DE-cut/DE.mpg/g')
+		#filename=$(echo $filename | sed 's///g')	# mp4 fehlt noch
 
 #Beispiel für mp4 LQ:	Tagesschau_14.12.22_20-00_ndr_15_TVOON_DE.mpg.mp4
 		#	------------------ FORMAT:
@@ -376,19 +381,19 @@ OTRrename () {
 		log debug "Format ist: $format"
 
 		#	------------------ Referenzpunkt suchen:
-		ersterpunkt=`echo $filename | awk '{print index($filename, ".")}'`
+		ersterpunkt=$(echo $filename | awk '{print index($filename, ".")}')
 
 		#	------------------ Titel:
 		titleend=$(($ersterpunkt-4))
-		title=`echo $filename | cut -c -$titleend `
-		title=`echo $title | sed 's/__/ - /g'`
-		title=`echo $title | sed 's/_/ /g'`
+		title=$(echo $filename | cut -c -$titleend )
+		title=$(echo $title | sed 's/__/ - /g')
+		title=$(echo $title | sed 's/_/ /g')
 		log debug "OTRrename: Titel: $title"
 
 		#	------------------ Jahr:
 		YYbeginn=$(($ersterpunkt-2))
 		YYend=$(($ersterpunkt-1))
-		YY=`echo $filename | cut -c $YYbeginn-$YYend `
+		YY=$(echo $filename | cut -c $YYbeginn-$YYend )
 		log debug "OTRrename: YY: $YY"
 		YYYY="20$YY"
 		log debug "OTRrename: YYYY: $YYYY"
@@ -396,29 +401,29 @@ OTRrename () {
 		#	------------------ Monat:
 		Mobeginn=$(($ersterpunkt+1))
 		Moend=$(($ersterpunkt+2))
-		Mo=`echo $filename | cut -c $Mobeginn-$Moend `
+		Mo=$(echo $filename | cut -c $Mobeginn-$Moend )
 		log debug "OTRrename: Monat: $Mo"
 
 		#	------------------ Tag:
 		DDbeginn=$(($ersterpunkt+4))
 		DDend=$(($ersterpunkt+5))
-		DD=`echo $filename | cut -c $DDbeginn-$DDend `
+		DD=$(echo $filename | cut -c $DDbeginn-$DDend )
 		log debug "OTRrename: Tag: $DD"
 
 		#	------------------ Stunde:
 		HHbeginn=$(($ersterpunkt+7))
 		HHend=$(($ersterpunkt+8))
-		HH=`echo $filename | cut -c $HHbeginn-$HHend `
+		HH=$(echo $filename | cut -c $HHbeginn-$HHend )
 		log debug "OTRrename: Stunde: $HH"
 
 		#	------------------ Minute:
 		Minbeginn=$(($ersterpunkt+10))
 		Minend=$(($ersterpunkt+11))
-		Min=`echo $filename | cut -c $Minbeginn-$Minend `
+		Min=$(echo $filename | cut -c $Minbeginn-$Minend )
 		log debug "OTRrename: Minute: $Min"
 
 		#	------------------ Dauer:
-		duration=`echo $film_ohne_ende | sed 's/.*_ *//;T;s/ *_.*//'`
+		duration=$(echo $film_ohne_ende | sed 's/.*_ *//;T;s/ *_.*//')
 		log debug "OTRrename:Dauer: $duration"
 
 		#	------------------ Sender:
@@ -430,6 +435,7 @@ OTRrename () {
 
 		# Serieninformationen holen - VIELEN DANK AN Daniel Dieth VON www.otr-serien.de :
 		if $OTRSERIENINFO ; then
+			log debug "OTRrename: OTRSERIENINFO: $OTRSERIENINFO"
 			serieninfo=$(curl "http://www.otr-serien.de/myapi/reverseotrkeycheck.php?otrkey=$i&who=synOTR" )
 			# Erfolglosmeldung Serieninfo: <!DOCTYPE html> Keine Serien zuordnung vorhanden
 			if echo "$serieninfo" | grep -q "Keine Serien zuordnung vorhanden"; then
@@ -442,46 +448,47 @@ OTRrename () {
 
 				if [ -f "$filesuche" ]; then
 					log info "Zeit für Seriensuche überschritten ==> verwende einfache Umbenennung."
-					NewName=`echo $NewName | sed "s/§tit/${title}/g"`
+					NewName=$(echo $NewName | sed "s/§tit/${title}/g")
 				else
 					log info "==> weiter auf Serieninformationen warten"
 					continue
 				fi
 			else
-				serieninfo=`echo $serieninfo | sed "s/<!DOCTYPE html>//g" | sed 's/\\\u00e4/ä/g' | sed 's/\\\u00f6/ö/g' | sed 's/\\\u00c4/Ä/g' | sed 's/\\\u00d6/Ö/g' | sed 's/\\\u00fC/ü/g' | sed 's/\\\u00dC/Ü/g' | sed 's/\\\u00dF/ß/g' `
+				serieninfo=$(echo $serieninfo | sed "s/<!DOCTYPE html>//g" | sed 's/\\\u00e4/ä/g' | sed 's/\\\u00f6/ö/g' | sed 's/\\\u00c4/Ä/g' | sed 's/\\\u00d6/Ö/g' | sed 's/\\\u00fC/ü/g' | sed 's/\\\u00dC/Ü/g' | sed 's/\\\u00dF/ß/g' )
 
-				OTRID=`echo "$serieninfo" | awk -F, '{print $1}' | awk -F: '{print $2}' | sed "s/\"//g"`
-				log debug "OTRrename: OTRID: $OTRID"
-				serietitle=`echo "$serieninfo" | jq -r '.Serie'`		# jq ist ein Kommandozeilen-JSON-Parser
-				log debug "OTRrename: serietitle: $serietitle"
-				season=`echo "$serieninfo" | awk -F, '{print $3}' | awk -F: '{print $2}' | sed "s/\"//g"`
+				OTRID=$(echo "$serieninfo" | awk -F, '{print $1}' | awk -F: '{print $2}' | sed "s/\"//g")
+				serietitle=$(echo "$serieninfo" | jq -r '.Serie')		# jq ist ein Kommandozeilen-JSON-Parser
+				season=$(echo "$serieninfo" | awk -F, '{print $3}' | awk -F: '{print $2}' | sed "s/\"//g")
 				season="$(printf '%02d' "$season")"		# 2stellig mit führender Null
-				log debug "OTRrename: season: $season"
-				episode=`echo "$serieninfo" | awk -F, '{print $4}' | awk -F: '{print $2}' | sed "s/\"//g"`
+				episode=$(echo "$serieninfo" | awk -F, '{print $4}' | awk -F: '{print $2}' | sed "s/\"//g")
 				episode="$(printf '%02d' "$episode")"	# 2stellig mit führender Null
+				episodetitle=$(echo "$serieninfo" | jq -r '.Folgenname')
+				description=$(echo "$serieninfo" | jq -r '.Folgenbeschreibung')
+				log debug "OTRrename: serieninfo: $serieninfo"
+				log debug "OTRrename: OTRID: $OTRID"
+				log debug "OTRrename: serietitle: $serietitle"
+				log debug "OTRrename: season: $season"
 				log debug "OTRrename: episode: $episode"
-				episodetitle=`echo "$serieninfo" | jq -r '.Folgenname'`
 				log debug "OTRrename: episodetitle: $episodetitle"
-				description=`echo "$serieninfo" | jq -r '.Folgenbeschreibung'`
 				log debug "OTRrename: description: $description"
 
 				title="$serietitle - S${season}E${episode} $episodetitle"
-				NewName=`echo $NewName | sed "s/§tit/${title}/g"`
+				NewName=$(echo $NewName | sed "s/§tit/${title}/g")
 			fi
 		fi
 
 		#	------------------ Neuer Name:
 		#	verwendbare Tags:	$duration $title $YYYY $YY $Mo $DD $HH $Min $Channel $format sowie freier Text und Zeichen
-		NewName=`echo $NewName | sed "s/§dur/${duration}/g"`
-		NewName=`echo $NewName | sed "s/§tit/${title}/g"`
-		NewName=`echo $NewName | sed "s/§ylong/${YYYY}/g"`
-		NewName=`echo $NewName | sed "s/§yshort/${YY}/g"`
-		NewName=`echo $NewName | sed "s/§mon/${Mo}/g"`
-		NewName=`echo $NewName | sed "s/§day/${DD}/g"`
-		NewName=`echo $NewName | sed "s/§hou/${HH}/g"`
-		NewName=`echo $NewName | sed "s/§min/${Min}/g"`
-		NewName=`echo $NewName | sed "s/§cha/${Channel}/g"`
-		NewName=`echo $NewName | sed "s/§qua/${format}/g"`
+		NewName=$(echo $NewName | sed "s/§dur/${duration}/g")
+		NewName=$(echo $NewName | sed "s/§tit/${title}/g")
+		NewName=$(echo $NewName | sed "s/§ylong/${YYYY}/g")
+		NewName=$(echo $NewName | sed "s/§yshort/${YY}/g")
+		NewName=$(echo $NewName | sed "s/§mon/${Mo}/g")
+		NewName=$(echo $NewName | sed "s/§day/${DD}/g")
+		NewName=$(echo $NewName | sed "s/§hou/${HH}/g")
+		NewName=$(echo $NewName | sed "s/§min/${Min}/g")
+		NewName=$(echo $NewName | sed "s/§cha/${Channel}/g")
+		NewName=$(echo $NewName | sed "s/§qua/${format}/g")
 
 		NewName="$NewName.$fileextension"
 		log debug "OTRrename: Neuer Dateiname ist $NewName"
@@ -539,6 +546,7 @@ do
 			DECODERACTIVE=true
 			OTRCUTACTIVE=true
 			OTRAVI2MP4ACTIVE=true
+			OTRSERIENINFO=true
 			OTRRENAMEACTIVE=true
 			shift
 			[ $VERBOSE -gt 1 ] && log info "aktiviere alle Verarbeitungen"
