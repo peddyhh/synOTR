@@ -75,11 +75,11 @@ personalurl=""	#Die persönliche URL von cutlist.at
 #delfolder="/volume1/downloads/#recycle"
 
 if [ -f ~/.otrcut ]; then
-source ~/.otrcut
+	source ~/.otrcut
 else
-echo "Keine Config-Datei gefunden, benutze Standardwerte."
+	echo "Keine Config-Datei gefunden, benutze Standardwerte."
 fi
-
+	
 #Diese Funktion gibt die Hilfe aus
 function help ()
 {
@@ -95,45 +95,45 @@ $0 [optionen] -i film.mpg.avi
 
 Optionen:
 
--i, --input [arg] Input Datei/Dateien (kann mehrfach benutzt werden um mehrere Dateien zu schneiden)
+-i, --input [arg]	Input Datei/Dateien (kann mehrfach benutzt werden um mehrere Dateien zu schneiden)
 
--a, --avisplit Avisplit und avimerge anstelle von avidemux verwenden
+-a, --avisplit		Avisplit und avimerge anstelle von avidemux verwenden
 
--e, --error Bei Fehlern das Script beenden
+-e, --error		Bei Fehlern das Script beenden
 
---tmp [arg] TMP-Ordner angeben (Standard: /tmp/), In diesem Ordner wird noch ein Ordner "otrcut" angelegt, ACHTUNG: ALLE Daten in \$tmp werden gelöscht!!!
+--tmp [arg]		TMP-Ordner angeben (Standard: /tmp/), In diesem Ordner wird noch ein Ordner "otrcut" angelegt, ACHTUNG: ALLE Daten in \$tmp werden gelöscht!!!
 
--l, --local Lokale Cutlists verwenden (Cutlists werden im aktuellen Verzeichnis gesucht)
+-l, --local 		Lokale Cutlists verwenden (Cutlists werden im aktuellen Verzeichnis gesucht)
 
---delete Quellvideo nach Schneidevorgang löschen ACHTUNG: Falls es sich bei der Quelle um ein OtrKey handelt wird dies auch gelöscht!!!
+--delete		Quellvideo nach Schneidevorgang löschen ACHTUNG: Falls es sich bei der Quelle um ein OtrKey handelt wird dies auch gelöscht!!!
 
--o, --output [arg] Ausgabeordner wählen (Standard "./cut")
+-o, --output [arg]	Ausgabeordner wählen (Standard "./cut")
 
--ow, --overwrite Schon existierende Ausgabedateien überschreiben
+-ow, --overwrite	Schon existierende Ausgabedateien überschreiben
 
--b, --bewertung Bewertungsfunktion aktivieren
+-b, --bewertung		Bewertungsfunktion aktivieren
 
--p, --play Zusammen mit "-b, --bewertung" einsetzbar, startet vor dem Bewerten das Video in einem Videoplayer (Wird in der Variablen \$player definiert)
+-p, --play		Zusammen mit "-b, --bewertung" einsetzbar, startet vor dem Bewerten das Video in einem Videoplayer (Wird in der Variablen \$player definiert)
 
--w, --warn Warnung bezüglich Löschung aller Dateien in \$tmp unterdrücken
+-w, --warn		Warnung bezüglich Löschung aller Dateien in \$tmp unterdrücken
 
---toprated Verwendet die best bewertetste Cutlist
+--toprated		Verwendet die best bewertetste Cutlist
 
--v, --verbose Ausführliche Ausgabe von avidemux bzw. avimerge/avisplit aktivieren
+-v, --verbose		Ausführliche Ausgabe von avidemux bzw. avimerge/avisplit aktivieren
 
---nosmart So wird das --force-smart-Argument für avidemux abgeschaltet.
+--nosmart		So wird das --force-smart-Argument für avidemux abgeschaltet.
 
---personal Die persönliche ID von cutlist.at zum Bewerten benutzen
+--personal		Die persönliche ID von cutlist.at zum Bewerten benutzen
 
--av, --avidemux Bei Verwendung von Avidemux <=2.4 muss diese Schalter gesetzt werden.
+-av, --avidemux		Bei Verwendung von Avidemux <=2.4 muss diese Schalter gesetzt werden.
 
--c, --copy Wenn $toprated=yes, und keine Cutlist gefunden wird, $film nach $output kopieren
+-c, --copy		Wenn $toprated=yes, und keine Cutlist gefunden wird, $film nach $output kopieren
 
---vcodec [arg] Videocodec (avidemux) spezifizieren. Wenn nicht gesetzt, dann "copy". Mögliche Elemente für [arg]: Divx/Xvid/FFmpeg4/VCD/SVCD/DVD/XVCD/XSVCD/COPY
+--vcodec [arg]          Videocodec (avidemux) spezifizieren. Wenn nicht gesetzt, dann "copy". Mögliche Elemente für [arg]: Divx/Xvid/FFmpeg4/VCD/SVCD/DVD/XVCD/XSVCD/COPY
 
--u, --update Nach einer neuen Version von OtrCut suchen
+-u, --update		Nach einer neuen Version von OtrCut suchen
 
--h, --help Diese Hilfe ^^
+-h, --help		Diese Hilfe ^^
 
 -del Ordner für die gelöschten Dateien
 
@@ -151,15 +151,17 @@ exit 0
 #Diese Funktion sucht nach einer neuen Version von OtrCut
 function update ()
 {
-online_version=$(wget -q -O - http://otrcut.siggimania4u.de/version | /usr/bin/tr -d "\r")
+#online_version=$(wget -q -O - http://otrcut.siggimania4u.de/version | /usr/bin/tr -d "\r")
+online_version="0.0" ## URL funktioniert nicht mehr
+
 
 if [ "$online_version" -gt "$version" ]; then
-echo -e "${blau}Es ist eine neue Version verfügbar.${normal}"
-echo -e "${blau}Verwendete Version: $version ${normal}"
-echo -e "${blau}Aktuelle Version: $online_version ${normal}"
-echo "Die neue Version kann unter \"http://otrcut.siggimania4u.de\" heruntergeladen werden."
+	echo -e "${blau}Es ist eine neue Version verfügbar.${normal}"
+	echo -e "${blau}Verwendete Version: $version ${normal}"
+	echo -e "${blau}Aktuelle Version: $online_version ${normal}"
+	echo "Die neue Version kann unter \"http://otrcut.siggimania4u.de\" heruntergeladen werden."
 else
-echo -e "${gelb}Es wurde keine neuere Version gefunden.${normal}"
+	echo -e "${gelb}Es wurde keine neuere Version gefunden.${normal}"
 fi
 
 exit 0
@@ -167,37 +169,37 @@ exit 0
 
 #Hier werden die übergebenen Option ausgewertet
 while [ ! -z "$1" ]; do
-case $1 in
--i | --input )	input=("${input[@]}" "$2")
-shift ;;
--a | --avisplit )	UseAvidemux=no ;;
--e | --error )	HaltByErrors=yes ;;
--d | --decode )	decode=yes ;;
---delete )	delete=yes ;;
--l | --local )	UseLocalCutlist=yes ;;
--t | --tmp )	tmp=$2
-shift ;;
--o | --output )	output=$2
-shift ;;
--ow | --overwrite )	overwrite=yes ;;
--v | --verbose )	verbose=yes ;;
--p | --play )	play=yes ;;
--b | --bewerten)	bewertung=yes ;;
--w | --warn )	warn=no ;;
--c | --copy )	copy=yes ;;
---personal )	personal=yes ;;
---toprated )	toprated=yes ;;
---deldir ) 	delfolder=$2 ;;
---lj ) 	lastjob=$2 ;;
---wd ) 	synotrconf=$2 ;;
---nosmart )	smart=no ;;
---vcodec ) vidcodec="$2"
+	case $1 in
+		-i | --input )	input=("${input[@]}" "$2")
+				shift ;;
+		-a | --avisplit )	UseAvidemux=no ;;
+		-e | --error )	HaltByErrors=yes ;;
+		-d | --decode )	decode=yes ;;
+		--delete )	delete=yes ;;
+		-l | --local )	UseLocalCutlist=yes ;;
+		-t | --tmp )	tmp=$2
+				shift ;;
+		-o | --output )	output=$2
+				shift ;;
+		-ow | --overwrite )	overwrite=yes ;;
+		-v | --verbose )	verbose=yes ;;
+		-p | --play )	play=yes ;;
+		-b | --bewerten)	bewertung=yes ;;
+		-w | --warn )	warn=no ;;
+		-c | --copy )	copy=yes ;;
+		--personal )	personal=yes ;;
+		--toprated )	toprated=yes ;;
+		--nosmart )	smart=no ;;
+		--vcodec )      vidcodec="$2"
                                 shift;;
--av | --avidemux ) ad_version=old ;;
--u | --update )	update ;;
--h | --help )	help ;;
-esac
-shift
+		-av | --avidemux ) ad_version=old ;;
+		-u | --update )	update ;;
+		-h | --help )	help ;;
+		--deldir ) 	delfolder=$2 ;;
+		--lj ) 	lastjob=$2 ;;
+		--wd ) 	synotrconf=$2 ;;
+	esac
+	shift
 done
 
 
@@ -210,25 +212,25 @@ echo "detailierte Ausgabe aktiv: $verbose"
 function warnung ()
 {
 if [ "$warn" == "yes" ]; then
-echo -e "${rot}"
-echo "ACHTUNG!!!"
-echo "Das Script wird alle Dateien in $tmp/otrcut löschen!"
-echo "Sie haben 5 Sekunden um das Script über STRG+C abzubrechen"
-
-for (( I=5; I >= 1 ; I-- )); do
-echo -n "$I "
-sleep 1
-done
-echo -e "${normal}"
-echo ""
-echo ""
+	echo -e "${rot}"
+	echo "ACHTUNG!!!"
+	echo "Das Script wird alle Dateien in $tmp/otrcut löschen!"
+	echo "Sie haben 5 Sekunden um das Script über STRG+C abzubrechen"
+	
+	for (( I=5; I >= 1 ; I-- )); do
+		echo -n "$I "
+		sleep 1
+	done
+	echo -e "${normal}"
+	echo ""
+	echo ""
 fi
 }
 
 #Diese Funktion gibt einen Hinweis zur Dateinamensübergabe aus
 function datei ()
 {
- "${gelb}"
+echo -e "${gelb}"
 echo "ACHTUNG!!!"
 echo "Die Eingabedateien müssen entweder ohne führende Verzeichnise "
 echo "(z.B. datei.avi, nur wenn Datei im aktuellen Verzeichnis!) oder"
@@ -244,21 +246,21 @@ echo ""
 function test ()
 {
 #Hier wird überprüft ob eine Eingabedatei angegeben ist
-if [ -z "$i" ]; then
-echo "${rot}Es wurde keine Eingabedatei angegeben!${normal}"
+if [ -z "$i" ]; then		
+    echo "${rot}Es wurde keine Eingabedatei angegeben!${normal}"
     exit 1
 else
     #Überprüfe ob angegebene Datei existiert
     if [ ! -f "$i" ]; then
-echo -e "${rot}Eingabedatei nicht gefunden!${normal}"
+        echo -e "${rot}Eingabedatei nicht gefunden!${normal}"
         exit 1
     fi
 fi
 
 #Hier wird überprüft ob die Option -p, --play richtig gesetzt wurde
 if [ "$play" == "yes" ] && [ "$bewertung" == "no" ]; then
-echo -e "${rot}\"Play\" kann nur in Verbindung mit \"Bewertung\" benutzt werden.${normal}"
-exit 1
+	echo -e "${rot}\"Play\" kann nur in Verbindung mit \"Bewertung\" benutzt werden.${normal}"
+	exit 1
 fi
 
 #Hier wird überprüft ob der Standard-Ausgabeordner verwendet werden soll.
@@ -266,42 +268,42 @@ fi
 #Wurde ein alternativer Ausgabeordner gewählt, wird geprüft ob er vorhanden ist.
 #Ist er nicht vorhanden wird gefragt ob er erstellt werden soll.
 if [ "$output" == "cut" ]; then
-if [ ! -d "cut" ]; then
-if [ -w $PWD ]; then
-mkdir cut
-echo "Verwende $PWD/cut als Ausgabeordner"
+	if [ ! -d "cut" ]; then
+		if [ -w $PWD ]; then
+			mkdir cut
+			echo "Verwende $PWD/cut als Ausgabeordner"
+		else
+			echo -e "${rot}Sie haben keine Schreibrechte im aktuellen Verzeichnis ($PWD).${normal}"
+			exit 1
+		fi
+	fi
 else
-echo -e "${rot}Sie haben keine Schreibrechte im aktuellen Verzeichnis ($PWD).${normal}"
-exit 1
-fi
-fi
-else
-if [ -d "$output" ] && [ -w "$output" ]; then
-echo "Verwende $output als Ausgabeordner."
-elif [ -d "$output" ] && [ ! -w "$output" ]; then
-echo -e "${rot}Sie haben keine Schreibrechte in $output.${normal}"
-exit 1
-else
-echo -e "${gelb}Das Verzeichnis $output wurde nicht gefunden, soll er erstellt werden? [y|n]${normal}"
-read OUTPUT
-while [ "$OUTPUT" == "" ] || [ ! "$OUTPUT" == "y" ] && [ ! "$OUTPUT" == "n" ]; do #Bei falscher Eingabe
-echo -e "${gelb}Falsche Eingabe, bitte nochmal:${normal}"
-read OUTPUT
-done
-if [ "$OUTPUT" == "n" ]; then	#Wenn der Benutzer nein "sagt"
-echo "Ausgabeverzeichnis \"$output\" soll nicht erstellt werden."
-exit 1
-elif [ "$OUTPUT" == "y" ]; then	#Wenn der Benutzer ja "sagt"
-echo -n "Erstelle Ordner $output -->"
-mkdir "$output"
-if [ -d "$output" ]; then
-echo -e "${gruen}okay${normal}"
-else
-echo -e "${rot}false${normal}"
-exit 1
-fi
-fi
-fi
+	if [ -d "$output" ] && [ -w "$output" ]; then
+		echo "Verwende $output als Ausgabeordner."
+	elif [ -d "$output" ] && [ ! -w "$output" ]; then
+		echo -e "${rot}Sie haben keine Schreibrechte in $output.${normal}"
+		exit 1
+	else
+		echo -e "${gelb}Das Verzeichnis $output wurde nicht gefunden, soll er erstellt werden? [y|n]${normal}"
+		read OUTPUT
+		while [ "$OUTPUT" == "" ] || [ ! "$OUTPUT" == "y" ] && [ ! "$OUTPUT" == "n" ]; do #Bei falscher Eingabe
+			echo -e "${gelb}Falsche Eingabe, bitte nochmal:${normal}"
+			read OUTPUT
+		done
+		if [ "$OUTPUT" == "n" ]; then	#Wenn der Benutzer nein "sagt"
+			echo "Ausgabeverzeichnis \"$output\" soll nicht erstellt werden."
+			exit 1
+		elif [ "$OUTPUT" == "y" ]; then	#Wenn der Benutzer ja "sagt"
+			echo -n "Erstelle Ordner $output -->"
+			mkdir "$output"
+			if [ -d "$output" ]; then
+				echo -e "${gruen}okay${normal}"
+			else
+				echo -e "${rot}false${normal}"
+				exit 1
+			fi
+		fi
+	fi
 fi
 
 #Hier wird überprüft ob der Standard-Tmpordner verwendet werden soll.
@@ -309,45 +311,45 @@ fi
 #Wurde ein alternativer Tmpordner gewählt, wird geprüft ob er vorhanden ist.
 #Ist er nicht vorhanden wird gefragt ob er erstellt werden soll.
 if [ "$tmp" == "/tmp/otrcut" ]; then
-if [ ! -d "/tmp/otrcut" ]; then
-if [ -w /tmp ]; then
-mkdir "/tmp/otrcut"
-echo "Verwende $tmp als Ausgabeordner"
-#tmp="$tmp/otrcut" "/volume1/homes/admin/script/OTR/tmp"
+	if [ ! -d "/tmp/otrcut" ]; then
+		if [ -w /tmp ]; then
+			mkdir "/tmp/otrcut"
+			echo "Verwende $tmp als Ausgabeordner"
+			#tmp="$tmp/otrcut"
+		else
+			echo -e "${rot}Sie haben keine Schreibrechte in /tmp/ ${end}"
+			exit 1
+		fi
+	fi
 else
-echo -e "${rot}Sie haben keine Schreibrechte in /tmp/ ${end}"
-exit 1
-fi
-fi
-else
-if [ -d "$tmp" ] && [ -w "$tmp" ]; then
-mkdir "$tmp/otrcut"
-echo "Verwende $tmp/otrcut als Ausgabeordner."
-tmp="$tmp/otrcut"
-elif [ -d "$tmp" ] && [ ! -w "$tmp" ]; then
-echo -e "${rot}Sie haben keine Schreibrechte in $tmp!${end}"
-else
-echo -e "${gelb}$tmp wurde nicht gefunden, soll er erstellt werden? [y|n]${end}"
-read TMP #Lesen der Benutzereingabe nach $TMP
-while [ "$TMP" == "" ] || [ ! "$TMP" == "y" ] && [ ! "$TMP" == "n" ]; do	#Bei falscher Eingabe
-echo -e "${gelb}Falsche Eingabe, bitte nochmal:${end}"
-read TMP #Lesen der Benutzereingabe nach $TMP
-done
-if [ $TMP == n ]; then	#Wenn der Benutzer nein "sagt"
-echo "Tempverzeichnis \"$tmp\" soll nicht erstellt werden."
-exit 1
-elif [ $TMP == y ]; then	#Wenn der Benutzer ja "sagt"
-echo -n "Erstelle Ordner $tmp --> "
-mkdir "$tmp/otrcut"
-if [ -d "$tmp/otrcut" ]; then
-echo -e "${gruen}okay${end}"
-tmp="$tmp/otrcut"
-else
-echo -e "${rot}false${end}"
-exit 1
-fi
-fi
-fi
+	if [ -d "$tmp" ] && [ -w "$tmp" ]; then
+		mkdir "$tmp/otrcut"
+		echo "Verwende $tmp/otrcut als Ausgabeordner."
+		tmp="$tmp/otrcut"
+	elif [ -d "$tmp" ] && [ ! -w "$tmp" ]; then
+		echo -e "${rot}Sie haben keine Schreibrechte in $tmp!${end}"
+	else
+		echo -e "${gelb}$tmp wurde nicht gefunden, soll er erstellt werden? [y|n]${end}"
+		read TMP	#Lesen der Benutzereingabe nach $TMP
+		while [ "$TMP" == "" ] || [ ! "$TMP" == "y" ] && [ ! "$TMP" == "n" ]; do	#Bei falscher Eingabe
+			echo -e "${gelb}Falsche Eingabe, bitte nochmal:${end}" 
+			read TMP	#Lesen der Benutzereingabe nach $TMP
+		done
+		if [ $TMP == n ]; then	#Wenn der Benutzer nein "sagt"
+			echo "Tempverzeichnis \"$tmp\" soll nicht erstellt werden."
+			exit 1
+		elif [ $TMP == y ]; then	#Wenn der Benutzer ja "sagt"
+			echo -n "Erstelle Ordner $tmp --> "
+			mkdir "$tmp/otrcut"
+			if [ -d "$tmp/otrcut" ]; then
+				echo -e "${gruen}okay${end}"
+				tmp="$tmp/otrcut"
+			else
+				echo -e "${rot}false${end}"
+				exit 1
+			fi
+		fi
+	fi
 fi
 }
 
@@ -355,67 +357,67 @@ fi
 function software ()
 {
 if [ "$UseAvidemux" == "yes" ]; then
-for s in avidemux2_cli avidemux2_qt4 avidemux2_gtk avidemux2 avidemux; do
-if [ -z $CutProg ]; then
-echo -n "Überprüfe ob $s installiert ist --> "
-if type -t $s >> /dev/null; then
-echo -e "${gruen}okay${normal}"
-CutProg="$s"
-else
-echo -e "${rot}false${normal}"
-fi
-fi
-done
-if [ -z $CutProg ]; then
-echo -e "${rot}Bitte installieren sie avidemux, oder verwenden sie die Optione \"-a\"!${normal}"
-exit 1
-fi
+	for s in avidemux2_cli avidemux2_qt4 avidemux2_gtk avidemux2 avidemux; do
+		if [ -z $CutProg ]; then
+			echo -n "Überprüfe ob $s installiert ist --> "
+			if type -t $s >> /dev/null; then
+				echo -e "${gruen}okay${normal}"
+				CutProg="$s"
+			else
+				echo -e "${rot}false${normal}"
+			fi
+		fi
+	done
+	if [ -z $CutProg ]; then
+		echo -e "${rot}Bitte installieren sie avidemux, oder verwenden sie die Optione \"-a\"!${normal}"
+		exit 1
+	fi
 fi
 
 #Hier wird überprüft ob avisplit und avimerge installiert sind
 if [ "$UseAvidemux" == "no" ]; then
-for p in $appdir/bin/avisplit $appdir/bin/avimerge; do
-#for p in avisplit avimerge; do
-echo -n "Überprüfe ob $p installiert ist --> "
-#if type -t $p >> $appdir/bin; then
-if type -t $p >> /dev/null; then
-echo -e "${gruen}okay${normal}"
-CutProg="avisplit"
-else
-echo -e "${rot}false${normal}"
-echo -e "${gelb}Installieren Sie transcode!${normal}"
-exit 1
-fi
-done
+	for p in $appdir/bin/avisplit $appdir/bin/avimerge; do
+	#for p in avisplit avimerge; do
+		echo -n "Überprüfe ob $p installiert ist --> "
+		#if type -t $p >> $appdir/bin; then
+		if type -t $p >> /dev/null; then
+			echo -e "${gruen}okay${normal}"
+			CutProg="avisplit"
+		else
+			echo -e "${rot}false${normal}"
+			echo -e "${gelb}Installieren Sie transcode!${normal}"
+			exit 1
+		fi
+	done
 fi
 
 #Hier wird überprüft ob date zum umrechnen der Zeit benutzt werden kann
 echo -n "Überprüfe welche Methode zum Umrechnen der Zeit benutzt wird --> "
 date_var=$(date -u -d @120 +%T)
 if [ "$date_var" == "00:02:00" ]; then
-echo -e "${blau}date${normal}"
-date_okay=yes
+	echo -e "${blau}date${normal}"
+	date_okay=yes
 else
-echo -e "${gelb}intern${normal}"
-date_okay=no
+	echo -e "${gelb}intern${normal}"
+	date_okay=no
 fi
 
 #Hier wird überprüft ob der richtige Pfad zum Decoder angegeben wurde
 if [ "$decoded" == "yes" ]; then
-echo -n "Überprüfe ob der Decoder-Pfad richtig gesetzt wurde --> "
-if $decoder -v >> /dev/null; then
-echo -e "${gruen}okay${normal}"
-else
-echo -e "${rot}false${normal}"
-exit 1
-fi
+	echo -n "Überprüfe ob der Decoder-Pfad richtig gesetzt wurde --> "
+	if $decoder -v >> /dev/null; then
+		echo -e "${gruen}okay${normal}"
+	else
+		echo -e "${rot}false${normal}"
+		exit 1
+	fi
 if [ "$email" == "" ]; then
-echo -e "${rot}EMail-Adresse wurde nicht gesetzt.${normal}"
-exit 1
+	echo -e "${rot}EMail-Adresse wurde nicht gesetzt.${normal}"
+	exit 1
 fi
 if [ "$password" == "" ]; then
-echo -e "${rot}Passwort wurde nicht gesetzt.${normal}"
-exit 1
+	echo -e "${rot}Passwort wurde nicht gesetzt.${normal}"
+	exit 1
 fi
 fi
 }
@@ -427,61 +429,61 @@ film=$i	#Der komplette Filmname und gegebenfalls der Pfad
 film_ohne_anfang=$i
 #Für Avidemux <=2.5 muss der komplette Pfad angegeben werden
 if [ "$ad_version" == "new" ]; then
-film_var=${film#/}
-output_var=${output#/}
-if [ "$film" == "$film_var" ]; then
-film_new_ad="$PWD/$film"
-else
-film_new_ad="$film"
-fi
-if [ "$output" == "$output_var" ]; then
-output="$PWD/$output"
-fi
+	film_var=${film#/}
+	output_var=${output#/}
+	if [ "$film" == "$film_var" ]; then
+		film_new_ad="$PWD/$film"
+	else
+		film_new_ad="$film"
+	fi
+	if [ "$output" == "$output_var" ]; then
+		output="$PWD/$output"
+	fi
 fi
 if [ "$decoded" == "yes" ]; then
-film_ohne_anfang="${film_ohne_anfang%%.otrkey}"
-film_ohne_anfang="${film_ohne_anfang##*/}"
-film="$film_ohne_anfang"
+	film_ohne_anfang="${film_ohne_anfang%%.otrkey}"
+	film_ohne_anfang="${film_ohne_anfang##*/}"
+	film="$film_ohne_anfang"
 fi
 CUTLIST=`basename "$film"`	#Filmname ohne Pfad
 echo -n "Überprüfe um welches Aufnahmeformat es sich handelt --> "
 if echo "$film_ohne_anfang" | grep -q ".HQ."; then	#Wenn es sich um eine "HQ" Aufnahme handelt
-film_ohne_ende=${film%%.mpg.HQ.avi}	#Filmname ohne Dateiendung
-CUTLIST=${CUTLIST/.avi/}.cutlist #Der lokale Cutlistname
-format=hq
-echo -e "${blau}HQ${normal}"
+	film_ohne_ende=${film%%.mpg.HQ.avi}	#Filmname ohne Dateiendung
+	CUTLIST=${CUTLIST/.avi/}.cutlist	#Der lokale Cutlistname
+	format=hq
+	echo -e "${blau}HQ${normal}"
 elif echo "$film_ohne_anfang" | grep -q ".mp4"; then	#Wenn es sich um eine "mp4" Aufnahme handelt
-film_ohne_ende=${film%%.mpg.mp4}	#Filmname ohne Dateiendung
-format=mp4
-CUTLIST=${CUTLIST/.mp4/}.cutlist #Der lokale Cutlistname
-echo -e "${blau}mp4${normal}"
+	film_ohne_ende=${film%%.mpg.mp4}	#Filmname ohne Dateiendung
+	format=mp4
+	CUTLIST=${CUTLIST/.mp4/}.cutlist	#Der lokale Cutlistname
+	echo -e "${blau}mp4${normal}"
 else
-film_ohne_ende=${film%%.mpg.avi}	#Filmename ohne Dateiendung
-format=avi
-CUTLIST=${CUTLIST/.avi/}.cutlist #Der lokale Cutlistname
-echo -e "${blau}avi${normal}"
+	film_ohne_ende=${film%%.mpg.avi}	#Filmename ohne Dateiendung
+	format=avi
+	CUTLIST=${CUTLIST/.avi/}.cutlist	#Der lokale Cutlistname
+	echo -e "${blau}avi${normal}"
 fi
 
 if echo "$film" | grep / >> /dev/null; then	#Wenn der Dateiname einen Pfad enthält
-film_ohne_anfang=${film##*/}	#Filmname ohne Pfad
-if echo "$film_ohne_anfang" | grep -q ".HQ."; then	#Wenn es sich um eine "HQ" Aufnahme handelt
-film_ohne_ende=${film_ohne_anfang%%.mpg.HQ.avi}
-format=hq
-elif echo "$film_ohne_anfang" | grep -q ".mp4"; then	#Wenn es sich um eine "mp4" Aufnahme handelt
-film_ohne_ende=${film_ohne_anfang%%.mpg.mp4}
-format=mp4
-else
-film_ohne_ende=${film_ohne_anfang%%.mpg.avi}
-format=avi
-fi
+	film_ohne_anfang=${film##*/}	#Filmname ohne Pfad
+	if echo "$film_ohne_anfang" | grep -q ".HQ."; then	#Wenn es sich um eine "HQ" Aufnahme handelt
+		film_ohne_ende=${film_ohne_anfang%%.mpg.HQ.avi}
+		format=hq
+	elif echo "$film_ohne_anfang" | grep -q ".mp4"; then	#Wenn es sich um eine "mp4" Aufnahme handelt
+		film_ohne_ende=${film_ohne_anfang%%.mpg.mp4}
+		format=mp4
+	else
+		film_ohne_ende=${film_ohne_anfang%%.mpg.avi}
+		format=avi
+	fi
 fi
 
 if echo "$film_ohne_anfang" | grep -q ".HQ."; then
-outputfile="$output/$film_ohne_ende.HQ-cut.avi"
+   outputfile="$output/$film_ohne_ende.HQ-cut.avi"
 elif echo "$film_ohne_anfang" | grep -q ".mp4"; then
-outputfile="$output/$film_ohne_ende-cut.mp4"
+   outputfile="$output/$film_ohne_ende-cut.mp4"
 else
-outputfile="$output/$film_ohne_ende-cut.avi"
+   outputfile="$output/$film_ohne_ende-cut.avi"
 fi
 }
 
@@ -490,66 +492,67 @@ function local ()
 {
 local_cutlists=$(ls *.cutlist)	#Variable mit allen Cutlists in $PWD
 filesize=$(ls -l "$film" | awk '{ print $5 }') #Dateigröße des Filmes
-let goodCount=0 #Passende Cutlists
-let arraylocal=1 #Nummer des Arrays
+let goodCount=0	#Passende Cutlists
+let arraylocal=1	#Nummer des Arrays
 for f in $local_cutlists; do
-echo -n "Überprüfe ob eine der gefundenen Cutlists zum Film passt --> "
-if [ -z $f ]; then
-echo -e "${rot}Keine Cutlist gefunden!${normal}"
-if [ "$HaltByErrors" == "yes" ]; then
-exit 1
-else
-vorhanden=no
-continue=1
-fi
-fi
+	echo -n "Überprüfe ob eine der gefundenen Cutlists zum Film passt --> "
+	if [ -z $f ]; then
+		echo -e "${rot}Keine Cutlist gefunden!${normal}"
+		if [ "$HaltByErrors" == "yes" ]; then
+			exit 1
+		else
+			vorhanden=no
+			continue=1
+		fi
+	fi
 
-OriginalFileSize=$(cat $f | grep OriginalFileSizeBytes | cut -d"=" -f2 | /usr/bin/tr -d "\r")	#Dateigröße des Films
+    OriginalFileSize=$(cat $f | grep OriginalFileSizeBytes | cut -d"=" -f2 | /usr/bin/tr -d "\r")	#Dateigröße des Films
 
-if cat $f | grep -q "$film"; then	#Wenn der Dateiname mit ApplyToFile übereinstimmt
-echo -e -n "${blau}ApplyToFile ${normal}"
-ApplyToFile=yes
-vorhanden=yes
-fi
-if [ "$OriginalFileSize" == "$filesize" ]; then	#Wenn die Dateigröße mit OriginalFileSizeBytes übereinstimmt
-echo -e -n "${blau}OriginalFileSizeBytes${normal}"
-OriginalFileSizeBytes=yes
-vorhanden=yes
-fi
-if [ "$vorhanden" == "yes" ]; then	#Wenn eine passende Cutlist vorhanden ist
-let goodCount++
-namelocal[$arraylocal]="$f"
-#echo $f
-#echo ${namelocal[$arrylocal]}
-let arraylocal++
-continue=0
-else
-echo -e "${rot}false${normal}"
-fi
+	if cat $f | grep -q "$film"; then	#Wenn der Dateiname mit ApplyToFile übereinstimmt
+		echo -e -n "${blau}ApplyToFile ${normal}"
+		ApplyToFile=yes	
+		vorhanden=yes
+	fi
+	if [ "$OriginalFileSize" == "$filesize" ]; then	#Wenn die Dateigröße mit OriginalFileSizeBytes übereinstimmt
+		echo -e -n "${blau}OriginalFileSizeBytes${normal}"
+		OriginalFileSizeBytes=yes 
+		vorhanden=yes
+	fi
+	if [ "$vorhanden" == "yes" ]; then	#Wenn eine passende Cutlist vorhanden ist
+		let goodCount++
+		namelocal[$arraylocal]="$f"
+		#echo $f
+		#echo ${namelocal[$arrylocal]}
+		let arraylocal++
+		continue=0
+	else
+		echo -e "${rot}false${normal}"
+	fi		
 done
 
 if [ "$goodCount" -eq 1 ]; then	#Wenn nur eine Cutlist gefunden wurde
-echo "Es wurde eine passende Cutlist gefunden. Diese wird nun verwendet."
-CUTLIST="$f"
-cp "$CUTLIST" "$tmp"
+	echo "Es wurde eine passende Cutlist gefunden. Diese wird nun verwendet."
+	CUTLIST="$f"
+	cp "$CUTLIST" "$tmp"
 elif [ "$goodCount" -gt 1 ]; then	#Wenn mehrere Cutlists gefunden wurden
-echo "Es wurden $goodCount Cutlists gefunden. Bitte wählen Sie aus:"
-echo ""
-let number=1
-for (( i=1; i <= $goodCount ; i++ )); do
-echo "$number: ${namelocal[$number]}"
-let number++
-done
-echo -n "Bitte die Nummer der zu verwendenden Cutlist eingeben:"
-read NUMBER
-while [ "$NUMBER" -gt "$goodCount" ]; do
-echo "${rot}false. Noch mal:${normal}"
-read NUMBER
-done
-echo "Verwende ${namelocal[$NUMBER]} als Cutlist."
-CUTLIST=$namelocal[$NUMBER]
-cp "$CUTLIST" "$tmp"
-vorhanden=yes
+	echo "Es wurden $goodCount Cutlists gefunden. Bitte wählen Sie aus:"
+	echo ""
+	let number=1
+	for (( i=1; i <= $goodCount ; i++ )); do
+		
+		echo "$number: ${namelocal[$number]}"
+		let number++
+	done
+	echo -n "Bitte die Nummer der zu verwendenden Cutlist eingeben:"
+	read NUMBER
+	while [ "$NUMBER" -gt "$goodCount" ]; do
+		echo "${rot}false. Noch mal:${normal}"
+		read NUMBER
+	done
+	echo "Verwende ${namelocal[$NUMBER]} als Cutlist."
+	CUTLIST=$namelocal[$NUMBER]
+	cp "$CUTLIST" "$tmp"
+	vorhanden=yes
 fi
 }
 
@@ -587,6 +590,8 @@ echo "filesize = $filesize"
 echo -n "Führe Suchanfrage anhand der Dateigröße [$filesize] bei \"cutlist.at\" durch ---> "
 wget -q -O "$tmp/search.xml" "${server}getxml.php?version=0.9.8.0&ofsb=$filesize" &&
 
+
+#??? Abschnitt ueberarbeiten
 if grep -q '<id>' "$tmp/search.xml"; then
 	echo -e "${gruen}okay${normal}"
 else
@@ -639,33 +644,32 @@ else
 		schon_mal_angezeigt=yes
 		let array=0
 	fi
-	#cutlist_anzahl=$(grep -c '/cutlist' "$tmp/search.xml" | /usr/bin/tr -d "\r") #Anzahl der gefundenen Cutlists
 	cutlist_anzahl=$(grep -c '/cutlist' "$tmp/search.xml" | /usr/bin/tr -d "\r") #Anzahl der gefundenen Cutlists
 	let cutlist_anzahl
 	if [ "$cutlist_anzahl" -ge "1" ] && [ "$continue" == "0" ]; then #Wenn mehrere Cutlists gefunden wurden
 		echo ""
 		let tail=1
 		while [ "$cutlist_anzahl" -gt "0" ]; do
-		#Name der Cutlist
-		name[$array]=$(grep "<name>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
-		#Author der Cutlist
-		author[$array]=$(grep "<author>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
-		#Bewertung des Authors
-		ratingbyauthor[$array]=$(grep "<ratingbyauthor>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
-		#Bewertung der User
-		rating[$array]=$(grep "<rating>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
-		#Kommentar des Authors
-		comment[$array]=$(grep "<usercomment>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
-		#ID der Cutlist
-		ID[$array]=$(grep "<id>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
-		#Anzahl der Bewertungen
-		ratingcount[$array]=$(grep "<ratingcount>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
-		#Cutangaben in Sekunden
-		cutinseconds[$array]=$(grep "<withtime>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
-		#Cutangaben in Frames (besser)
-		cutinframes[$array]=$(grep "<withframes>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
-		#Filename der Cutlist
-		filename[$array]=$(grep "<filename>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+			#Name der Cutlist
+			name[$array]=$(grep "<name>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+			#Author der Cutlist
+			author[$array]=$(grep "<author>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+			#Bewertung des Authors
+			ratingbyauthor[$array]=$(grep "<ratingbyauthor>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+			#Bewertung der User
+			rating[$array]=$(grep "<rating>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+			#Kommentar des Authors
+			comment[$array]=$(grep "<usercomment>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+			#ID der Cutlist
+			ID[$array]=$(grep "<id>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+			#Anzahl der Bewertungen
+			ratingcount[$array]=$(grep "<ratingcount>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+			#Cutangaben in Sekunden
+			cutinseconds[$array]=$(grep "<withtime>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+			#Cutangaben in Frames (besser)
+			cutinframes[$array]=$(grep "<withframes>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+			#Filename der Cutlist
+			filename[$array]=$(grep "<filename>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
 
 		if [ "$toprated" == "no" ]; then #Wenn --toprated nicht gesetzt ist
 			if echo $cutlistWithError | grep -q "${ID[$array]}"; then #Wenn Fehler gesetzt ist z.B. EPG-Error oder MissingBeginning
@@ -824,24 +828,24 @@ function cutlist_error ()
 #Diese Variable beinhaltet alle möglichen Fehler
 errors="EPGError MissingBeginning MissingEnding MissingVideo MissingAudio OtherError"
 for e in $errors; do
-error_check=$(cat "$tmp/$CUTLIST" | grep -m1 $e | cut -d"=" -f2 | /usr/bin/tr -d "\r")
-if [ "$error_check" == "1" ]; then
-echo -e "${rot}Es wurde ein Fehler gefunden: \"$e\"${normal}"
-error_yes=$e
-if [ "$error_yes" == "OtherError" ]; then
-othererror=$(cat "$tmp/$CUTLIST" | grep "OtherErrorDescription")
-othererror=${othererror##*=}
-echo -e "${rot}Grund für \"OtherError\": \"$othererror\"${normal}"
-fi
-if [ "$error_yes" == "EPGError" ]; then
-epgerror=$(cat "$tmp/$CUTLIST" | grep "ActualContent")
-epgerror=${epgerror##*=}
-echo -e "${rot}ActualContent: $epgerror${end}"
-fi
-error_found=1
-cutlistWithError="${cutlistWithError} $id_downloaded"
-#echo $cutlistWithError
-fi
+	error_check=$(cat "$tmp/$CUTLIST" | grep -m1 $e | cut -d"=" -f2 | /usr/bin/tr -d "\r")
+	if [ "$error_check" == "1" ]; then
+		echo -e "${rot}Es wurde ein Fehler gefunden: \"$e\"${normal}"
+		error_yes=$e
+		if [ "$error_yes" == "OtherError" ]; then
+			othererror=$(cat "$tmp/$CUTLIST" | grep "OtherErrorDescription")
+			othererror=${othererror##*=}
+			echo -e "${rot}Grund für \"OtherError\": \"$othererror\"${normal}"
+		fi
+		if [ "$error_yes" == "EPGError" ]; then
+			epgerror=$(cat "$tmp/$CUTLIST" | grep "ActualContent")
+			epgerror=${epgerror##*=}
+			echo -e "${rot}ActualContent: $epgerror${end}"
+		fi
+		error_found=1
+		cutlistWithError="${cutlistWithError} $id_downloaded"
+		#echo $cutlistWithError
+	fi
 done
 }
 
@@ -852,52 +856,52 @@ function aspectratio ()
 echo -n "Ermittles Seitenverhältnis --> "
 
 aspectR=$(
-mplayer -vo null -nosound "$film" 2>&1 |
-while read line; do	# Warten bis mplayer aspect-infos liefert oder anfaengt zu spielen
-if [[ $line == "Movie-Aspect is 1.33:1"* ]] || [[ "$line" == "Film-Aspekt ist 1.33:1"* ]]; then
-echo 1
-break
-fi
-if [[ $line == "Movie-Aspect is 0.56:1"* ]] || [[ "$line" == "Film-Aspekt ist 0.56:1"* ]]; then
-echo 2
-break
-fi
-if [[ $line == "Movie-Aspect is 1.78:1"* ]] || [[ "$line" == "Film-Aspekt ist 1.78:1"* ]]; then
-echo 2
-break
-fi
-if [[ $line == "VO: [null]"* ]] ; then
-echo 0
-break
-fi
-done
-)
+		mplayer -vo null -nosound "$film" 2>&1 |
+		while read line; do				# Warten bis mplayer aspect-infos liefert oder anfaengt zu spielen
+			if [[ $line == "Movie-Aspect is 1.33:1"* ]] || [[ "$line" == "Film-Aspekt ist 1.33:1"* ]]; then
+				echo 1
+				break
+			fi
+			if [[ $line == "Movie-Aspect is 0.56:1"* ]] || [[ "$line" == "Film-Aspekt ist 0.56:1"* ]]; then
+				echo 2
+				break
+			fi
+			if [[ $line == "Movie-Aspect is 1.78:1"* ]] || [[ "$line" == "Film-Aspekt ist 1.78:1"* ]]; then
+				echo 2
+				break
+			fi
+			if [[ $line == "VO: [null]"* ]] ; then
+				echo 0
+				break
+			fi
+		done
+	)
 
 #echo $aspectR
 
 if [ "$aspectR" -eq 0 ] ; then
-echo -e "${rot}false${normal}"
-if [ "$smart" == "no" ]; then
-aspect=169
-else
-echo -n "Soll der 16:9-Modus verwendet werden? [y|N]? "
-read ASPECT
-if [ "$ASPECT" == "y" ]; then
-aspect=169
-echo "Benutze 16:9-Modus"
-else
-aspect=43
-echo "Benutze den normalen Modus."
-fi
-fi
+	echo -e "${rot}false${normal}"
+	if [ "$smart" == "no" ]; then
+		aspect=169
+	else
+		echo -n "Soll der 16:9-Modus verwendet werden? [y|N]? "
+		read ASPECT
+		if [ "$ASPECT" == "y" ]; then
+			aspect=169
+			echo "Benutze 16:9-Modus"
+		else
+			aspect=43
+			echo "Benutze den normalen Modus."
+		fi
+	fi
 fi
 if [ $aspectR -eq 1 ] ; then
-echo -e "${blau}4:3"${normal}
-aspect=43
+	echo -e "${blau}4:3"${normal}
+	aspect=43
 fi
 if [ $aspectR -eq 2 ] ; then
-echo -e "${blau}16:9${normal}"
-aspect=169
+	echo -e "${blau}16:9${normal}"
+	aspect=169
 fi
 }
 
@@ -921,41 +925,41 @@ time=""
 let cut_anzahl=$(cat "$tmp/$CUTLIST" | grep "NoOfCuts" | cut -d"=" -f2 | /usr/bin/tr -d "\r")
 echo "####Auflistung der Cuts####"
 if [ "$format" == "zeit" ]; then	#Wenn das verwendete Format "Zeit" ist
-let head1=1
-echo "Es müssen $cut_anzahl Cuts umgerechnet werden."
-while [ "$cut_anzahl" -gt "0" ]; do
-#Die Sekunde in der der Cut beginnen soll
-let time_seconds_start=$(cat "$tmp/$CUTLIST" | grep "Start=" | cut -d"=" -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
-echo "Startcut: $time_seconds_start. Sekunde"
-time=${time}$(date -u -d @$time_seconds_start +%T-)	#Die Sekunden umgerechned in das Format hh:mm:ss
-#Wie viele Sekunden der Cut dauert
-let time_seconds_ende=$(cat "$tmp/$CUTLIST" | grep "Duration=" | cut -d"=" -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
-let time_seconds_ende=$time_seconds_ende+$time_seconds_start	#Die Sekunde in der der Cut endet
-echo "Endcut: $time_seconds_ende. Sekunde"
-time=${time}$(date -u -d @$time_seconds_ende +%T,)	#Die Endsekunde im Format hh:mm:ss
-let head1++
-let cut_anzahl--
-#In der Variable $time sind alle Cuts wie folgt aufgelistet:
-#hh:mm:ss-hh:mm:ss,hh:mm:ss-hh:mm:ss,...
-done
+	let head1=1
+	echo "Es müssen $cut_anzahl Cuts umgerechnet werden."
+	while [ "$cut_anzahl" -gt "0" ]; do
+		#Die Sekunde in der der Cut beginnen soll
+		let time_seconds_start=$(cat "$tmp/$CUTLIST" | grep "Start=" | cut -d"=" -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
+		echo "Startcut: $time_seconds_start. Sekunde"
+		time=${time}$(date -u -d @$time_seconds_start +%T-)	#Die Sekunden umgerechned in das Format hh:mm:ss
+		#Wie viele Sekunden der Cut dauert
+		let time_seconds_ende=$(cat "$tmp/$CUTLIST" | grep "Duration=" | cut -d"=" -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
+		let time_seconds_ende=$time_seconds_ende+$time_seconds_start	#Die Sekunde in der der Cut endet
+		echo "Endcut: $time_seconds_ende. Sekunde"
+		time=${time}$(date -u -d @$time_seconds_ende +%T,)	#Die Endsekunde im Format hh:mm:ss
+		let head1++
+		let cut_anzahl--
+		#In der Variable $time sind alle Cuts wie folgt aufgelistet:
+		#hh:mm:ss-hh:mm:ss,hh:mm:ss-hh:mm:ss,...
+	done
 elif [ "$format" == "frames" ]; then	#Wenn das verwendete Format "Frames" ist
-let head1=1
-echo "Es müssen $cut_anzahl Cuts umgerechnet werden."
-while [ $cut_anzahl -gt 0 ]; do
-#Der Frame bei dem der Cut beginnt
-         let startframe=$(cat "$tmp/$CUTLIST" | grep "StartFrame=" | cut -d= -f2 | head -n$head1 | tail -n1 | /usr/bin/tr -d "\r")
-           echo "Startframe= $startframe"
-           time="${time}$startframe-"
-#Wie viele Frames dauert der Cut
-           let stopframe=$(cat "$tmp/$CUTLIST" | grep "DurationFrames=" | cut -d= -f2 | head -n$head1 | tail -n1 | /usr/bin/tr -d "\r")
-           let stopframe=$stopframe+$startframe	#Der Frame bei dem der Cut endet
-           echo "Endframe= $stopframe"
-           time="${time}$stopframe,"	#Auflistung alles Cuts
-           let head1++
-           let cut_anzahl--
-#In der Variable $time sind alle Cuts wie folgt aufgelistet:
-#StartFrame-EndFrame,StartFrame-EndFrame,...
-     done
+	let head1=1
+	echo "Es müssen $cut_anzahl Cuts umgerechnet werden."
+	while [ $cut_anzahl -gt 0 ]; do
+		#Der Frame bei dem der Cut beginnt
+        	let startframe=$(cat "$tmp/$CUTLIST" | grep "StartFrame=" | cut -d= -f2 | head -n$head1 | tail -n1 | /usr/bin/tr -d "\r")
+          	echo "Startframe= $startframe"
+          	time="${time}$startframe-"
+		#Wie viele Frames dauert der Cut
+          	let stopframe=$(cat "$tmp/$CUTLIST" | grep "DurationFrames=" | cut -d= -f2 | head -n$head1 | tail -n1 | /usr/bin/tr -d "\r")
+          	let stopframe=$stopframe+$startframe	#Der Frame bei dem der Cut endet
+          	echo "Endframe= $stopframe"
+          	time="${time}$stopframe,"	#Auflistung alles Cuts
+          	let head1++
+          	let cut_anzahl--
+		#In der Variable $time sind alle Cuts wie folgt aufgelistet:
+		#StartFrame-EndFrame,StartFrame-EndFrame,...
+    	done
 fi
 echo "####ENDE####"
 sleep 1
@@ -968,61 +972,59 @@ time=""
 let cut_anzahl=$(cat "$tmp/$CUTLIST" | grep "NoOfCuts" | cut -d= -f2 | /usr/bin/tr -d "\r")
 echo "#####Auflistung der Cuts#####"
 if [ $format == "zeit" ]; then
-let head1=1
-    echo "Es müssen $cut_anzahl Cuts umgerechnet werden"
-    while [ $cut_anzahl -gt 0 ]; do
-#Die Sekunde in der der Cut startet
-       let time_seconds_start=$(cat "$tmp/$CUTLIST" | grep "Start=" | cut -d= -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
-       let ss=$time_seconds_start	#Setze die Skunden auf $time_seconds_start
-       let mm=0 #Setze die Minuten auf 0
-       let hh=0 #Setze die Stunden auf 0
-       while [ $ss -ge "60" ]; do	#Wenn die Sekunden >= 60 sind
-          let mm++ #Zähle Minuten um 1 hoch
-          let ss=$ss-60 #Zähle Sekunden um 60 runter
-          while [ $mm -ge "60" ]; do	#Wenn die Minuten >= 60 sind
-             let hh++ #Zähle Stunden um 1 hoch
-             let mm=$mm-60 #Zähle Minuten um 60 runter
-          done
-done
-time2_start=$hh:$mm:$ss	#Bringe die Zeit ins richtige Format
-       echo "Startcut= $time2_start"
-       time="${time}${time2_start}-"	#Auflistung aller Zeiten
-#Sekunden wie lange der Cut dauert
-       let time_seconds_ende=$(cat "$tmp/$CUTLIST" | grep "Duration=" | cut -d= -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
-       let time_seconds_ende=$time_seconds_ende+$time_seconds_start	#Die Sekunde in der der Cut endet
-       let ss=$time_seconds_ende	#Setze die Sekunden auf $time_seconds_ende
-       let mm=0 #Setze die Minuten auf 0
-       let hh=0 #Setze die Stunden auf 0
-       while [ $ss -ge "60" ]; do	#Wenn die Sekunden >= 60 sind
-         let mm++ #Zähle Minuten um 1 hoch
-let ss=$ss-60 #Zähle Sekunden um 60 runter
-          while [ $mm -ge "60" ]; do	#Wenn die Minuten >= 60 sind
-             let hh++ #Zähle Stunden um 1 hoch
-             let mm=$mm-60 #Z#hle Minuten um 60 runter
-          done
-done
-time2_ende=$hh:$mm:$ss	#Bringe die Zeit ins richtige Format
-       echo "Endcut= $time2_ende"
-       time="${time}${time2_ende},"	#Auflistung alles Zeiten
-        let head1++ #neu
-        let cut_anzahl-- #neu
-    done
+	let head1=1
+   	echo "Es müssen $cut_anzahl Cuts umgerechnet werden"
+   	while [ $cut_anzahl -gt 0 ]; do
+		#Die Sekunde in der der Cut startet
+      		let time_seconds_start=$(cat "$tmp/$CUTLIST" | grep "Start=" | cut -d= -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
+      		let ss=$time_seconds_start	#Setze die Skunden auf $time_seconds_start
+      		let mm=0	#Setze die Minuten auf 0
+      		let hh=0	#Setze die Stunden auf 0
+      		while [ $ss -ge "60" ]; do	#Wenn die Sekunden >= 60 sind
+         		let mm++	#Zähle Minuten um 1 hoch
+         		let ss=$ss-60	#Zähle Sekunden um 60 runter
+         		while [ $mm -ge "60" ]; do	#Wenn die Minuten >= 60 sind
+            			let hh++	#Zähle Stunden um 1 hoch
+            			let mm=$mm-60	#Zähle Minuten um 60 runter
+         		done
+      		done
+      		time2_start=$hh:$mm:$ss	#Bringe die Zeit ins richtige Format
+      		echo "Startcut= $time2_start"
+      		time="${time}${time2_start}-"	#Auflistung aller Zeiten
+		#Sekunden wie lange der Cut dauert
+      		let time_seconds_ende=$(cat "$tmp/$CUTLIST" | grep "Duration=" | cut -d= -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
+      		let time_seconds_ende=$time_seconds_ende+$time_seconds_start	#Die Sekunde in der der Cut endet
+      		let ss=$time_seconds_ende	#Setze die Sekunden auf $time_seconds_ende
+      		let mm=0	#Setze die Minuten auf 0
+      		let hh=0	#Setze die Stunden auf 0
+      		while [ $ss -ge "60" ]; do	#Wenn die Sekunden >= 60 sind
+        		let mm++	#Zähle Minuten um 1 hoch
+			let ss=$ss-60	#Zähle Sekunden um 60 runter
+         		while [ $mm -ge "60" ]; do	#Wenn die Minuten >= 60 sind
+            			let hh++	#Zähle Stunden um 1 hoch
+            			let mm=$mm-60	#Z#hle Minuten um 60 runter
+         		done
+      		done
+      		time2_ende=$hh:$mm:$ss	#Bringe die Zeit ins richtige Format
+      		echo "Endcut= $time2_ende"
+      		time="${time}${time2_ende},"	#Auflistung alles Zeiten
+   	done
 elif [ $format == "frames" ]; then
-let head1=1
-     echo "Es müssen $cut_anzahl Cuts umgerechnet werden"
-     while [ $cut_anzahl -gt 0 ]; do
-#Der Frame bei dem der Cut beginnt
-let startframe=$(cat "$tmp/$CUTLIST" | grep "StartFrame=" | cut -d= -f2 | head -n$head1 | tail -n1 | /usr/bin/tr -d "\r")
-           echo "Startframe= $startframe"
-           time="${time}$startframe-"	#Auflistung der Cuts
-#Die Frames wie lange der Cut dauert
-let stopframe=$(cat "$tmp/$CUTLIST" | grep "DurationFrames=" | cut -d= -f2 | head -n$head1 | tail -n1 | /usr/bin/tr -d "\r")
-           let stopframe=$stopframe+$startframe	#Der Frame bei dem der Cut endet
-           echo "Endframe= $stopframe"
-           time="${time}$stopframe,"	#Auflistung der Cuts
-           let head1++
-           let cut_anzahl--
-     done
+	let head1=1
+    	echo "Es müssen $cut_anzahl Cuts umgerechnet werden"
+    	while [ $cut_anzahl -gt 0 ]; do
+		#Der Frame bei dem der Cut beginnt
+		let startframe=$(cat "$tmp/$CUTLIST" | grep "StartFrame=" | cut -d= -f2 | head -n$head1 | tail -n1 | /usr/bin/tr -d "\r")
+          	echo "Startframe= $startframe"
+          	time="${time}$startframe-"	#Auflistung der Cuts
+		#Die Frames wie lange der Cut dauert
+		let stopframe=$(cat "$tmp/$CUTLIST" | grep "DurationFrames=" | cut -d= -f2 | head -n$head1 | tail -n1 | /usr/bin/tr -d "\r")
+          	let stopframe=$stopframe+$startframe	#Der Frame bei dem der Cut endet
+          	echo "Endframe= $stopframe"
+          	time="${time}$stopframe,"	#Auflistung der Cuts
+          	let head1++
+          	let cut_anzahl--
+    	done
 fi
 echo "#####ENDE#####"
 sleep 1
@@ -1060,23 +1062,22 @@ if [ -f "$outputfile" ]; then
 				echo 2 > /dev/ttyS1 #short beep
 		fi
 	fi	
-
-if [ "$delete" == "yes" ]; then
-echo "Lösche Quellvideo."
-if [ $decoded == "yes" ]; then
-$appdir/bin/nice -n 15 rm -rf "$output/$film"
+	if [ "$delete" == "yes" ]; then
+		echo "Lösche Quellvideo."
+		if [ $decoded == "yes" ]; then		
+			$appdir/bin/nice -n 15 rm -rf "$output/$film"
+		else
+			#$appdir/bin/nice -n 15 rm -rf "$film"
+			$appdir/bin/nice -n 15 mv "$film" "$delfolder"
+		fi
+	fi
 else
-#$appdir/bin/nice -n 15 rm -rf "$film"
-$appdir/bin/nice -n 15 mv "$film" "$delfolder"
-fi
-fi
-else
-echo -e "${rot}Avisplit oder avimerge muss einen Fehler verursacht haben.${normal}"
-if [ "$HaltByErrors" == "yes" ]; then
-exit 1
-else
-continue=1
-fi
+	echo -e "${rot}Avisplit oder avimerge muss einen Fehler verursacht haben.${normal}"
+	if [ "$HaltByErrors" == "yes" ]; then
+		exit 1
+	else
+		continue=1
+	fi
 fi
 }
 
@@ -1099,17 +1100,17 @@ EOF
 start1 >> "$tmp/avidemux.js"
 
 if [ "$ad_version" == "old" ]; then
-if [ "$decoded" == "yes" ]; then
-echo "app.load(\"$output/$film\")" >> "/$tmp/avidemux.js"
-else
-echo "app.load(\"$film\")" >> "/$tmp/avidemux.js"
-fi
+	if [ "$decoded" == "yes" ]; then
+		echo "app.load(\"$output/$film\")" >> "$tmp/avidemux.js"
+	else
+		echo "app.load(\"$film\")" >> "$tmp/avidemux.js"
+	fi
 elif [ "$ad_version" == "new" ]; then
-if [ "$decoded" == "yes" ]; then
-echo "app.load(\"$output_new/$film\")" >> "/$tmp/avidemux.js"
-else
-echo "app.load(\"$film_new_ad\")" >> "/$tmp/avidemux.js"
-fi
+	if [ "$decoded" == "yes" ]; then
+		echo "app.load(\"$output_new/$film\")" >> "$tmp/avidemux.js"
+	else
+		echo "app.load(\"$film_new_ad\")" >> "$tmp/avidemux.js"
+	fi
 fi
 
 function start2 ()
@@ -1125,52 +1126,52 @@ start2 >> "$tmp/avidemux.js"
 let cut_anzahl=$(cat "$tmp/$CUTLIST" | grep "NoOfCuts" | cut -d= -f2 | /usr/bin/tr -d "\r")
 echo "#####Auflistung der Cuts#####"
 if [ "$format" = "zeit" ]; then
-let head2=1
-echo "Es müssen $cut_anzahl Cuts umgerechnet werden"
-while [ "$cut_anzahl" -gt 0 ]; do
-let time_seconds_start=$(cat "$tmp/$CUTLIST" | grep "Start=" | cut -d= -f2 | head -n$head2 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
-           let time_frame_start=$time_seconds_start*$fps
-           echo "Startframe= $time_frame_start"
-           let time_seconds_dauer=$(cat "$tmp/$CUTLIST" | grep "Duration=" | cut -d= -f2 | head -n$head2 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
-           let time_frame_dauer=$time_seconds_dauer*$fps
-           echo "Dauer= $time_frame_dauer"
-           echo "app.addSegment(0,$time_frame_start,$time_frame_dauer);" >> "$tmp/avidemux.js"
-           let head2++
-           let cut_anzahl--
-     done
+	let head2=1
+	echo "Es müssen $cut_anzahl Cuts umgerechnet werden"
+	while [ "$cut_anzahl" -gt 0 ]; do
+		let time_seconds_start=$(cat "$tmp/$CUTLIST" | grep "Start=" | cut -d= -f2 | head -n$head2 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
+          	let time_frame_start=$time_seconds_start*$fps
+          	echo "Startframe= $time_frame_start"
+          	let time_seconds_dauer=$(cat "$tmp/$CUTLIST" | grep "Duration=" | cut -d= -f2 | head -n$head2 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
+          	let time_frame_dauer=$time_seconds_dauer*$fps
+          	echo "Dauer= $time_frame_dauer"
+          	echo "app.addSegment(0,$time_frame_start,$time_frame_dauer);" >> "$tmp/avidemux.js"
+          	let head2++
+          	let cut_anzahl--
+    	done
 elif [ "$format" = "frames" ]; then
-let head2=1
-     echo "Es müssen $cut_anzahl Cuts umgerechnet werden"
-     while [ $cut_anzahl -gt 0 ]; do
-let startframe=$(cat "$tmp/$CUTLIST" | grep "StartFrame=" | cut -d= -f2 | head -n$head2 | tail -n1 | /usr/bin/tr -d "\r")
-           echo "Startframe= $startframe"
-           let dauerframe=$(cat "$tmp/$CUTLIST" | grep "DurationFrames=" | cut -d= -f2 | head -n$head2 | tail -n1 | /usr/bin/tr -d "\r")
-           echo "Dauer= $dauerframe"
-           echo "app.addSegment(0,$startframe,$dauerframe);" >> "$tmp/avidemux.js"
-           let head2++
-           let cut_anzahl--
-     done
+	let head2=1
+    	echo "Es müssen $cut_anzahl Cuts umgerechnet werden"
+    	while [ $cut_anzahl -gt 0 ]; do
+		let startframe=$(cat "$tmp/$CUTLIST" | grep "StartFrame=" | cut -d= -f2 | head -n$head2 | tail -n1 | /usr/bin/tr -d "\r")
+          	echo "Startframe= $startframe"
+          	let dauerframe=$(cat "$tmp/$CUTLIST" | grep "DurationFrames=" | cut -d= -f2 | head -n$head2 | tail -n1 | /usr/bin/tr -d "\r")
+          	echo "Dauer= $dauerframe"
+          	echo "app.addSegment(0,$startframe,$dauerframe);" >> "$tmp/avidemux.js"
+          	let head2++
+          	let cut_anzahl--
+    	done
 fi
 
 echo "#####ENDE#####"
 sleep 1
 
 if [ "$ad_version" == "old" ]; then
-if echo "$film_ohne_anfang" | grep -q ".HQ."; then
-outputfile="$output/$film_ohne_ende.HQ-cut.avi"
-elif echo "$film_ohne_anfang" | grep -q ".mp4"; then
-outputfile="$output/$film_ohne_ende-cut.mp4"
+	if echo "$film_ohne_anfang" | grep -q ".HQ."; then
+		outputfile="$output/$film_ohne_ende.HQ-cut.avi"
+	elif echo "$film_ohne_anfang" | grep -q ".mp4"; then
+   		outputfile="$output/$film_ohne_ende-cut.mp4"
+	else
+   		outputfile="$output/$film_ohne_ende-cut.avi"
+	fi
 else
-outputfile="$output/$film_ohne_ende-cut.avi"
-fi
-else
-if echo "$film_ohne_anfang" | grep -q ".HQ."; then
-outputfile="$output/$film_ohne_ende.HQ-cut.avi"
-elif echo "$film_ohne_anfang" | grep -q ".mp4"; then
-outputfile="$output/$film_ohne_ende-cut.mp4"
-else
-outputfile="$output/$film_ohne_ende-cut.avi"
-fi
+	if echo "$film_ohne_anfang" | grep -q ".HQ."; then
+		outputfile="$output/$film_ohne_ende.HQ-cut.avi"
+	elif echo "$film_ohne_anfang" | grep -q ".mp4"; then
+   		outputfile="$output/$film_ohne_ende-cut.mp4"
+	else
+ 	  	outputfile="$output/$film_ohne_ende-cut.avi"
+	fi
 fi
 
 function ende ()
@@ -1234,48 +1235,48 @@ EOF
 }
 
 if [ "$ad_version" == "old" ]; then
-ende >> "$tmp/avidemux.js"
+	ende >> "$tmp/avidemux.js"
 else
-ende_new >> "$tmp/avidemux.js"
+	ende_new >> "$tmp/avidemux.js"
 fi
 
 echo "Übergebe die Cuts nun an avidemux"
 
 #if [ "$aspect" == "43" ]; then
 if [ "$smart" == "yes" ]; then
-if [ "$verbose" == "yes" ]; then
-nice -n 15 $CutProg --nogui --force-smart --run "$tmp/avidemux.js" --quit
-else
-nice -n 15 $CutProg --nogui --force-smart --run "$tmp/avidemux.js" --quit >> /dev/null
-fi
+	if [ "$verbose" == "yes" ]; then
+		nice -n 15 $CutProg --nogui --force-smart --run "$tmp/avidemux.js" --quit
+	else
+		nice -n 15 $CutProg --nogui --force-smart --run "$tmp/avidemux.js" --quit >> /dev/null
+	fi
 #elif [ "$aspect" == "169" ]; then
 elif [ "$smart" == "no" ]; then
-if [ "$verbose" == "yes" ]; then
-nice -n 15 $CutProg --nogui --run "$tmp/avidemux.js" --quit
-else
-nice -n 15 $CutProg --nogui --run "$tmp/avidemux.js" --quit >> /dev/null
-fi
+	if [ "$verbose" == "yes" ]; then
+		nice -n 15 $CutProg --nogui --run "$tmp/avidemux.js" --quit
+	else
+		nice -n 15 $CutProg --nogui --run "$tmp/avidemux.js" --quit >> /dev/null
+	fi
 fi
 
 if [ -f "$outputfile" ]; then
-echo -n -e ${gruen}$outputfile${normal}
-      echo -e "${gruen} wurde erstellt${normal}"
-if [ "$delete" == "yes" ]; then
-echo "Lösche Quellvideo."	
-if [ $decoded == "yes" ]; then
-nice -n 15 rm -rf "$output/$film"
+	echo -n -e  ${gruen}$outputfile${normal}
+     	echo -e "${gruen} wurde erstellt${normal}"
+	if [ "$delete" == "yes" ]; then
+		echo "Lösche Quellvideo."	
+		if [ $decoded == "yes" ]; then		
+			nice -n 15 rm -rf "$output/$film"
+		else
+			#nice -n 15 rm -rf "$film"
+			nice -n 15 mv "$film" "$delfolder"
+		fi
+	fi
 else
-#nice -n 15 rm -rf "$film"
-nice -n 15 mv "$film" "$delfolder"
-fi
-fi
-else
-echo -e "${rot}Avidemux muss einen Fehler verursacht haben${normal}"
-      if [ $HaltByErrors == "yes" ]; then
-exit 1
-      else
-continue=1
-      fi
+     	echo -e "${rot}Avidemux muss einen Fehler verursacht haben${normal}"
+     	if [ $HaltByErrors == "yes" ]; then
+        	  exit 1
+     	else
+        	  continue=1
+     	fi
 fi
 }
 
@@ -1298,38 +1299,38 @@ echo -n "Note: "
 note=""
 read note
 while [ ! "$note" == "" ] && [ "$note" -gt "5" ]; do
-note=""
-  echo -e "${gelb}Ungültige Eingabe, bitte nochmal:${normal}"
-   read note
+	note=""
+ 	echo -e "${gelb}Ungültige Eingabe, bitte nochmal:${normal}"
+  	read note
 done
 if [ "$note" == "" ]; then
-echo "Für diese Cutlist wird keine Bewertung abgegeben."
+	echo "Für diese Cutlist wird keine Bewertung abgegeben."
 else
-echo -n "Übermittle Bewertung für $CUTLIST -->"
-if [ "$personal" == "yes" ]; then
-wget -q -O "$tmp/rate.php" "${personalurl}rate.php?rate=$id&rating=$note&userid=$cutlistuser&version=0.9.8.7"
-else
-wget -q -O "$tmp/rate.php" "http://cutlist.at/rate.php?rate=$id&rating=$note&userid=$user&version=0.9.8.7"
-fi
-sleep 1
-if [ -f "$tmp/rate.php" ]; then
-if cat "$tmp/rate.php" | grep -q "Cutlist nicht von hier. Bewertung abgelehnt."; then
-echo -e " ${rot}False${normal}"	
-       echo -e " ${rot}Die Cutlist ist nicht von http://cutlist.at und kann nicht bewertet werden.${normal}"
-elif cat "$tmp/rate.php" | grep -q "Du hast schon eine Bewertung abgegeben oder Cutlist selbst hochgeladen."; then
-echo -e " ${rot}False${normal}"
-echo -e "${rot}Du hast für die Cutlist schonmal eine Bewertung abgegeben oder sie selbst hochgeladen.${normal}"
-elif cat "$tmp/rate.php" | grep -q "Sie haben diese Liste bereits bewertet"; then
-echo -e " ${rot}False${normal}"
-echo -e "${rot}Du hast für die Cutlist schonmal eine Bewertung abgegeben oder sie selbst hochgeladen.${normal}"
-elif cat "$tmp/rate.php" | grep -q "Cutlist wurde bewertet"; then
-echo -e "${gruen}Okay${normal}"
-echo -e "${gruen}Cutlist wurde bewertet${normal}"
-fi
-else
-echo -e "${rot}False${normal}"
-echo -e "${rot}Bewertung fehlgeschlagen.${normal}"
-    fi
+	echo -n "Übermittle Bewertung für $CUTLIST -->"
+	if [ "$personal" == "yes" ]; then
+		wget -q -O "$tmp/rate.php" "${personalurl}rate.php?rate=$id&rating=$note&userid=$cutlistuser&version=0.9.8.7"
+	else
+		wget -q -O "$tmp/rate.php" "http://cutlist.at/rate.php?rate=$id&rating=$note&userid=$user&version=0.9.8.7"
+	fi
+	sleep 1
+	if [ -f "$tmp/rate.php" ]; then
+		if cat "$tmp/rate.php" | grep -q "Cutlist nicht von hier. Bewertung abgelehnt."; then
+    			echo -e " ${rot}False${normal}"	
+      			echo -e " ${rot}Die Cutlist ist nicht von http://cutlist.at und kann nicht bewertet werden.${normal}"
+	   	elif cat "$tmp/rate.php" | grep -q "Du hast schon eine Bewertung abgegeben oder Cutlist selbst hochgeladen."; then
+	   	   	echo -e " ${rot}False${normal}"
+	      		echo -e "${rot}Du hast für die Cutlist schonmal eine Bewertung abgegeben oder sie selbst hochgeladen.${normal}"
+		elif cat "$tmp/rate.php" | grep -q "Sie haben diese Liste bereits bewertet"; then
+	      		echo -e " ${rot}False${normal}"
+	      		echo -e "${rot}Du hast für die Cutlist schonmal eine Bewertung abgegeben oder sie selbst hochgeladen.${normal}"
+	   	elif cat "$tmp/rate.php" | grep -q "Cutlist wurde bewertet"; then
+	      		echo -e "${gruen}Okay${normal}"
+	      		echo -e "${gruen}Cutlist wurde bewertet${normal}"
+	   	fi
+   	else
+	  	echo -e "${rot}False${normal}"
+	  	echo -e "${rot}Bewertung fehlgeschlagen.${normal}"
+   	fi
 fi
 }
 
@@ -1337,27 +1338,27 @@ fi
 function decode ()
 {
 if echo $i | grep -q .otrkey; then
-if [ ! "$email_checked" == "yes" ]; then
-if [ "$email" == "" ]; then
-echo -e "${rot}Kann nicht dekodieren da keine EMail-Adresse angegeben wurde!${normal}"
-exit 1
-elif [ "$password" == "" ]; then
-echo -e "${rot}Kann nicht dekodieren da kein Passwort angegeben wurde!${normal}"#
-exit 1
+	if [ ! "$email_checked" == "yes" ]; then
+		if [ "$email" == "" ]; then
+			echo -e "${rot}Kann nicht dekodieren da keine EMail-Adresse angegeben wurde!${normal}"
+			exit 1
+		elif [ "$password" == "" ]; then
+			echo -e "${rot}Kann nicht dekodieren da kein Passwort angegeben wurde!${normal}"#
+			exit 1
+		else
+			email_checked=yes
+		fi
+	fi
+	echo "Decodiere Datei --> "
+	nice -n 15 $decoder -e "$email" -p "$password" -q -f -i "$i" -o "$output"
+	otrkey=$i
+	decoded=yes
 else
-email_checked=yes
-fi
-fi
-echo "Decodiere Datei --> "
-nice -n 15 $decoder -e "$email" -p "$password" -q -f -i "$i" -o "$output"
-otrkey=$i
-decoded=yes
-else
-decoded=no
+	decoded=no
 fi
 if [ "$delete" == "yes" ]; then
-echo "Lösche OtrKey"
-rm -rf "$otrkey"
+	echo "Lösche OtrKey"
+	rm -rf "$otrkey"
 fi
 }
 
@@ -1365,8 +1366,8 @@ fi
 function del_tmp ()
 {
 if [ "$tmp" == "" ] || [ "$tmp" == "/" ] || [ "$tmp" == "/home" ]; then
-echo -e "${rot}Achtung, bitte überprüfen Sie die Einstellung von \$tmp${normal}"
-exit 1
+	echo -e "${rot}Achtung, bitte überprüfen Sie die Einstellung von \$tmp${normal}"
+	exit 1
 fi
 echo "Lösche temporäre Dateien"
 #echo $tmp
@@ -1375,111 +1376,112 @@ rm -rf "$tmp"/*
 
 
 if [ "$warn" == "yes" ]; then
-warnung
+	warnung
 fi
 datei
 #del_tmp
 
 #if [ "$server" == "0" ]; then
-# echo "Verwende http://cutlist.de als Server."
+#   	echo "Verwende  http://cutlist.de als Server."
 #elif [ "$server" == "1" ]; then
-# echo "Verwende http://cutlist.at als Server"
+#   	echo "Verwende http://cutlist.at als Server"
 #elif [ "$server" == "2" ]; then
-# echo "Verwende http://cutlist.mbod.net als Server"
+#   	echo "Verwende http://cutlist.mbod.net als Server"
 #fi
 software
-for i in "${input[@]}"; do
-test
-del_tmp
-decode
-        name
-        if [ "$UseLocalCutlist" == "yes" ]; then
-local
-fi
-while true; do
-if [ "$UseLocalCutlist" == "no" ] || [ "$vorhanden" == "no" ]; then
-load
-        fi
-if [ "$continue" == "0" ]; then
-format
-fi
-#if [ "$continue" == "0" ]; then
-          # aspectratio
-#fi
+	for i in "${input[@]}"; do
+       		test
+		del_tmp
+		decode
+       		name
+       	if [ "$UseLocalCutlist" == "yes" ]; then
+           	local
+       	fi
+        
+       	while true; do
+		if [ "$UseLocalCutlist" == "no" ] || [ "$vorhanden" == "no" ]; then
+           		load
+       		fi
+       		if [ "$continue" == "0" ]; then
+         	  	format
+		fi
+		#if [ "$continue" == "0" ]; then
+         	#  	aspectratio
+		#fi
         if [ "$continue" == "0" ]; then
-fps
-fi
-if [ "$continue" == "0" ]; then
-cutlist_error
-fi
-if [ "$error_found" == "1" ] && [ "$toprated" == "no" ]; then
-echo -e "${gelb}In der Cutlist wurde ein Fehler gefunden, soll sie verwendet werden? [y|n]${normal}"
-read error_antwort
-if [ "$error_antwort" == "y" ]; then
-echo -e "${gelb}Verwende die Cutlist trotz Fehler!${normal}"
-break
-else
-echo "Bitte neue Cutlist wählen!"
-fi
-else
-break
-fi
-if [ "$error_found" == "1" ] && [ "$toprated" == "yes" ]; then
-break
-fi
-done
-if [ "$CutProg" = "avisplit" ] && [ $continue == "0" ]; then
-if [ "$date_okay" = "yes" ]; then
-time1
-            elif [ "$date_okay" = "no" ]; then
-time2
-            fi
-if [ "$overwrite" == "no" ]; then
-if [ ! -f "$output/$film_ohne_ende-cut.avi" ]; then
-split
-               else
-echo -e "${gelb}Die Ausgabedatei existiert bereits!${normal}"
-                  if [ $HaltByErrors == "yes" ]; then
-exit 1
-                  else
-continue=1
-                  fi
-fi
-fi
-if [ "$overwrite" == "yes" ]; then
-split
-            fi
-fi
-if [ "$CutProg" = "avidemux" ] || [ "$CutProg" = "avidemux2" ] || [ "$CutProg" = "avidemux2_cli" ] || [ "$CutProg" = "avidemux2_qt4" ] || [ "$CutProg" = "avidemux2_gtk" ] && [ $continue == "0" ]; then
-if [ "$overwrite" == "no" ]; then
-if [ ! -f "$output/$film_ohne_ende-cut.avi" ]; then
-demux
-               else
-echo -e "${gelb}Die Ausgabedatei existiert bereits!${normal}"
-                  if [ $HaltByErrors == "yes" ]; then
-exit 1
-                  else
-continue=1
-                  fi
-fi
-fi
-if [ "$overwrite" == "yes" ]; then
-demux
-            fi
-fi
-if [ "$UseLocalCutlist" == "no" ] && [ "$bewertung" == "yes" ] && [ ! "$continue" == "1" ]; then
-if [ "$play" == "no" ]; then
-bewertung
-elif [ "$play" == "yes" ]; then
-echo "Starte nun den gewählten Videoplayer"
-sleep 1
-               $player "$outputfile"
-               bewertung
-fi
-fi
-if [ "$decoded" == "yes" ]; then
-rm -rf "$output/$film"
-fi
-del_tmp
-    continue=0
+         	  	fps
+		fi
+		if [ "$continue" == "0" ]; then
+			cutlist_error
+		fi
+		if [ "$error_found" == "1" ] && [ "$toprated" == "no" ]; then
+			echo -e "${gelb}In der Cutlist wurde ein Fehler gefunden, soll sie verwendet werden? [y|n]${normal}"
+			read error_antwort
+			if [ "$error_antwort" == "y" ]; then
+				echo -e "${gelb}Verwende die Cutlist trotz Fehler!${normal}"
+				break
+			else
+				echo "Bitte neue Cutlist wählen!"
+			fi
+		else
+			break
+		fi
+		if [ "$error_found" == "1" ] && [ "$toprated" == "yes" ]; then
+			break
+		fi
+       	done
+       	if [ "$CutProg" = "avisplit" ] && [ $continue == "0" ]; then
+           	if [ "$date_okay" = "yes" ]; then
+              		time1
+           	elif [ "$date_okay" = "no" ]; then
+              		time2
+           	fi
+           	if [ "$overwrite" == "no" ]; then
+              		if [ ! -f "$output/$film_ohne_ende-cut.avi" ]; then
+                 		split
+              		else
+                 		echo -e "${gelb}Die Ausgabedatei existiert bereits!${normal}"
+                 		if [ $HaltByErrors == "yes" ]; then
+                    			exit 1
+                 		else
+                    			continue=1
+                 		fi
+              		fi
+           	fi
+           	if [ "$overwrite" == "yes" ]; then
+              		split
+           	fi
+       	fi
+       	if [ "$CutProg" = "avidemux" ] || [ "$CutProg" = "avidemux2" ] || [ "$CutProg" = "avidemux2_cli" ] || [ "$CutProg" = "avidemux2_qt4" ] || [ "$CutProg" = "avidemux2_gtk" ] && [ $continue == "0" ]; then
+           	if [ "$overwrite" == "no" ]; then
+              		if [ ! -f "$output/$film_ohne_ende-cut.avi" ]; then
+                 		demux
+              		else
+                 		echo -e "${gelb}Die Ausgabedatei existiert bereits!${normal}"
+                 		if [ $HaltByErrors == "yes" ]; then
+                    			exit 1
+                 		else
+                    			continue=1
+                 		fi
+              		fi
+           	fi
+           	if [ "$overwrite" == "yes" ]; then
+              		demux
+           	fi
+       	fi
+       	if [ "$UseLocalCutlist" == "no" ] && [ "$bewertung" == "yes" ] && [ ! "$continue" == "1" ]; then
+	   	if [ "$play" == "no" ]; then
+	      		bewertung
+	   	elif [ "$play" == "yes" ]; then
+	      		echo "Starte nun den gewählten Videoplayer"
+	      		sleep 1
+              		$player "$outputfile"
+              		bewertung
+	   	fi
+       	fi
+	if [ "$decoded" == "yes" ]; then
+		rm -rf "$output/$film"
+	fi
+   	del_tmp
+   	continue=0
 done
