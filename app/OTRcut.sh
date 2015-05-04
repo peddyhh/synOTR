@@ -72,9 +72,16 @@ decoder="otrdecoder"	# Pfad zum decoder. Z.B. /home/benutzer/bin/otrdecoder
 personalurl=""			#Die persoenliche URL von cutlist.at
 
 
+#######################################
+# Verbose-Level for logging:
+# 0: do not print anything to console  1: print only errors to console
+# 2: print errors and info to console  3: print errors, info and debug logs to console
+VERBOSE=1
+LOGFILE=$appdir/OTRcut.log	# ??? sinnvoller Ort muss noch gefunden werden ????
 
-# ??? ToDo: Ordner aus Konfiguration.txt uebernehmen
-# delfolder="/volume1/downloads/#recycle"
+
+# ??? ToDo: Ordner aus synOTR.conf uebernehmen
+# delfolder="/volume1/xxxxxxx/#recycle"
 if [ -f ~/.otrcut ]; then
 	source ~/.otrcut
 else
@@ -152,6 +159,80 @@ FPS-Script/HD-Funktion: Florian Knodt <www.adlerweb.info>
 EOT
 exit 0
 } ## END showhelp ##
+
+
+#################################################
+# Informiert Benutzer, ggf. ueber versch. Kanaele
+senduserinfo () {
+	if [ -z "$1" ]; then echo  "senduserinfo: ohne Information aufgerufen" |tee -a $LOGFILE; return ; fi
+	if [ $dsmtextnotify = "on" ] ; then
+		/usr/syno/bin/synodsmnotify @administrators "synOTR" "$1"
+	fi
+	if [ $dsmbeepnotify = "on" ] ; then echo 2 > /dev/ttyS1 ; fi ## short beep
+} ## END senduserinfo ##
+
+
+#################################################
+# Zum sauberen Beenden des Skripts aufrufen
+# Einziges Argument ist der ExitCode.
+# 0: Alles OK
+# >0: Fehler
+alreadyExiting=
+clean_exit () {
+  test $alreadyExiting && return
+  alreadyExiting=yes
+  local exitcode=${1:-1}
+  #trap - ERR INT TERM EXIT
+  test $exitcode -gt 0 && log error Exiting with code $exitcode.
+  test -w "$LOGFILE" && echo Logfile liegt unter "'${LOGFILE}'"
+  exit $exitcode
+} ## END clean_exit ##
+
+
+#################################################
+log () {
+    local level=$1
+    case "$level" in
+      error)
+          shift;
+          test ${VERBOSE} -ge 1 && echo "EMERG: $Script:" "$@" 1>&2		## normal ERROR = CUPS:EMERG:
+          test -w "$LOGFILE" && echo $(date '+%F %T') ERROR: "$@" >> "$LOGFILE"
+          ;;
+      info)
+          shift;
+          test ${VERBOSE} -ge 2 && echo "$@"
+          echo $(date '+%F %T') "INFO: " "$@" >> "${LOGFILE}"
+          ;;
+      debug)
+          shift;
+          test ${VERBOSE} -ge 3 && echo "$@"
+          echo $(date '+%F %T') DEBUG: "$@" >> "${LOGFILE}"
+          ;;
+      console)
+          shift;
+          echo "$@"
+          echo $(date '+%F %T') console: "$@" >> "${LOGFILE}"
+          ;;
+      *)
+          log info "$@"
+    esac
+} ## END log ##
+
+##############
+# Benutzen mit
+# command 2>&1 | pipeLog
+pipeLog () {
+	if [ $# -eq 1 ]; then level=$1 ; else level=debug ; fi
+	while read data
+	do
+		log $level "$data"
+	done
+} ## END pipeLog ##
+
+#################################################
+## mehrere Log- und Fehlerbehandlungsfunktionen
+fehler () { log error "$@"; clean_exit 1 ; }
+
 
 #################################################
 #Diese Funktion sucht nach einer neuen Version von OtrCut
