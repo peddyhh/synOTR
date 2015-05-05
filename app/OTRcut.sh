@@ -66,7 +66,7 @@ copy=no			# Wenn $toprated=yes, und keine Cutlist gefunden wird, $film nach $out
 # Sie sind fuer die Verwendung des Decoders gedacht.
 email="" 				# Die EMail-Adresse mit der Sie bei OTR registriert sind
 password=""				# Das Passwort mit dem Sie sich bei OTR einloggen
-decoder="otrdecoder"	# Pfad zum decoder. Z.B. /home/benutzer/bin/otrdecoder
+decoder=$(which otrdecoder)	# Pfad zum decoder. Z.B. /home/benutzer/bin/otrdecoder
 
 # Diese Variablen werden vom Benutzer gesetzt.
 personalurl=""			#Die persoenliche URL von cutlist.at
@@ -240,12 +240,12 @@ update () {
 	online_version=$(wget -q -O - http://otrcut.siggimania4u.de/version | /usr/bin/tr -d "\r")
 	#online_version="0.0" ## URL funktioniert nicht mehr
 	if [ "$online_version" -gt "$version" ]; then
-		echo -e "${blau}Es ist eine neue Version verfuegbar.${normal}"
-		echo -e "${blau}Verwendete Version: $version ${normal}"
-		echo -e "${blau}Aktuelle Version: $online_version ${normal}"
+		echo -e "Es ist eine neue Version verfuegbar."
+		echo -e "Verwendete Version: $version "
+		echo -e "Aktuelle Version: $online_version "
 		echo "Die neue Version kann unter \"http://otrcut.siggimania4u.de\" heruntergeladen werden."
 	else
-		echo -e "${gelb}Es wurde keine neuere Version gefunden.${normal}"
+		echo -e "Es wurde keine neuere Version gefunden."
 	fi
 
 	exit 0
@@ -257,13 +257,13 @@ update () {
 #Diese Funktion gibt die Warnung bezueglich der Loeschung von $tmp aus
 loeschwarnung () {
 	if [ "$warn" == "yes" ]; then
-		echo -e "${rot}"
+		echo -e ""
 		echo "ACHTUNG!!!"
 		echo "Das Script wird alle Dateien in $tmp/otrcut loeschen!"
 		echo "Sie haben 5 Sekunden um das Script ueber STRG+C abzubrechen"
 		i=0;
 		while [ $i -lt 6 ]; do i=$(( i + 1 )); echo -n "$i " ; sleep 1 ; done
-		echo -e "${normal}\n\n\n"
+		echo -e "\n\n\n"
 	fi
 } ## END loeschwarnung ##
 
@@ -271,12 +271,12 @@ loeschwarnung () {
 #################################################
 #Diese Funktion gibt einen Hinweis zur Dateinamensuebergabe aus
 dateihinweis () {
-	echo -e "${gelb}"
+	echo -e ""
 	echo "ACHTUNG!!!"
 	echo "Die Eingabedateien muessen entweder ohne fuehrende Verzeichnise "
 	echo "(z.B. datei.avi, nur wenn Datei im aktuellen Verzeichnis!) oder"
 	echo "mit dem KOMPLETTEN Pfad (z.B. /home/user/datei.avi) angegeben werden!"
-	echo -e "${normal}"
+	echo -e ""
 	echo ""
 	echo ""
 	sleep 2
@@ -289,17 +289,17 @@ dateihinweis () {
 checkENV () {
 	#Hier wird ueberprueft ob eine Eingabedatei angegeben ist
 	if [ -z "$i" ]; then
-		echo "${rot}Es wurde keine Eingabedatei angegeben!${normal}"
+		echo "Es wurde keine Eingabedatei angegeben!"
 		exit 1
 	fi
 	# Ueberpruefe ob angegebene Datei existiert
 	if [ ! -f "$i" ]; then
-		echo -e "${rot}Eingabedatei nicht gefunden!${normal}"
+		echo -e "Eingabedatei nicht gefunden!"
 		exit 1
 	fi
 	#Hier wird ueberprueft ob die Option -p, --play richtig gesetzt wurde ### ??? dieser Check gehoert zum globalen Check ###
 	if [ "$play" == "yes" ] && [ "$bewertung" == "no" ]; then
-		echo -e "${rot}\"Play\" kann nur in Verbindung mit \"Bewertung\" benutzt werden.${normal}"
+		echo -e "\"Play\" kann nur in Verbindung mit \"Bewertung\" benutzt werden."
 		exit 1
 	fi
 
@@ -313,7 +313,7 @@ checkENV () {
 				mkdir cut
 				echo "Verwende $PWD/cut als Ausgabeordner"
 			else
-				echo -e "${rot}Sie haben keine Schreibrechte im aktuellen Verzeichnis ($PWD).${normal}"
+				echo -e "Sie haben keine Schreibrechte im aktuellen Verzeichnis ($PWD)."
 				exit 1
 			fi
 		fi
@@ -321,13 +321,13 @@ checkENV () {
 		if [ -d "$output" ] && [ -w "$output" ]; then
 			echo "Verwende $output als Ausgabeordner."
 		elif [ -d "$output" ] && [ ! -w "$output" ]; then
-			echo -e "${rot}Sie haben keine Schreibrechte in $output.${normal}"
+			echo -e "Sie haben keine Schreibrechte in $output."
 			exit 1
 		else
-			echo -e "${gelb}Das Verzeichnis $output wurde nicht gefunden, soll er erstellt werden? [y|n]${normal}"
+			echo -e "Das Verzeichnis $output wurde nicht gefunden, soll er erstellt werden? [y|n]"
 			read OUTPUT
 			while [ "$OUTPUT" == "" ] || [ ! "$OUTPUT" == "y" ] && [ ! "$OUTPUT" == "n" ]; do #Bei falscher Eingabe
-				echo -e "${gelb}Falsche Eingabe, bitte nochmal:${normal}"
+				echo -e "Falsche Eingabe, bitte nochmal:"
 				read OUTPUT
 			done
 			if [ "$OUTPUT" == "n" ]; then	#Wenn der Benutzer nein "sagt"
@@ -337,9 +337,9 @@ checkENV () {
 				echo -n "Erstelle Ordner $output -->"
 				mkdir "$output"
 				if [ -d "$output" ]; then
-					echo -e "${gruen}okay${normal}"
+					echo -e "okay"
 				else
-					echo -e "${rot}false${normal}"
+					echo -e "false"
 					exit 1
 				fi
 			fi
@@ -357,7 +357,7 @@ checkENV () {
 				echo "Verwende $tmp als Ausgabeordner"
 				#tmp="$tmp/otrcut"
 			else
-				echo -e "${rot}Sie haben keine Schreibrechte in /tmp/ ${end}"
+				echo -e "Sie haben keine Schreibrechte in /tmp/ ${end}"
 				exit 1
 			fi
 		fi
@@ -367,12 +367,12 @@ checkENV () {
 			echo "Verwende $tmp/otrcut als Ausgabeordner."
 			tmp="$tmp/otrcut"
 		elif [ -d "$tmp" ] && [ ! -w "$tmp" ]; then
-			echo -e "${rot}Sie haben keine Schreibrechte in $tmp!${end}"
+			echo -e "Sie haben keine Schreibrechte in $tmp!${end}"
 		else
-			echo -e "${gelb}$tmp wurde nicht gefunden, soll er erstellt werden? [y|n]${end}"
+			echo -e "$tmp wurde nicht gefunden, soll er erstellt werden? [y|n]${end}"
 			read TMP	#Lesen der Benutzereingabe nach $TMP
 			while [ "$TMP" == "" ] || [ ! "$TMP" == "y" ] && [ ! "$TMP" == "n" ]; do	#Bei falscher Eingabe
-				echo -e "${gelb}Falsche Eingabe, bitte nochmal:${end}"
+				echo -e "Falsche Eingabe, bitte nochmal:${end}"
 				read TMP	#Lesen der Benutzereingabe nach $TMP
 			done
 			if [ $TMP == n ]; then	#Wenn der Benutzer nein "sagt"
@@ -382,10 +382,10 @@ checkENV () {
 				echo -n "Erstelle Ordner $tmp --> "
 				mkdir "$tmp/otrcut"
 				if [ -d "$tmp/otrcut" ]; then
-					echo -e "${gruen}okay${end}"
+					echo -e "okay${end}"
 					tmp="$tmp/otrcut"
 				else
-					echo -e "${rot}false${end}"
+					echo -e "false${end}"
 					exit 1
 				fi
 			fi
@@ -402,15 +402,15 @@ check_software () {
 			if [ -z "$CutProg" ]; then
 				echo -n "Überpruefe ob $s installiert ist --> "
 				if type -t $s >> /dev/null; then
-					echo -e "${gruen}okay${normal}"
+					echo -e "okay"
 					CutProg="$s"
 				else
-					echo -e "${rot}false${normal}"
+					echo -e "false"
 				fi
 			fi
 		done
 		if [ -z "$CutProg" ]; then
-			echo -e "${rot}Bitte installieren sie avidemux, oder verwenden sie die Optione \"-a\"!${normal}"
+			echo -e "Bitte installieren sie avidemux, oder verwenden sie die Optione \"-a\"!"
 			exit 1
 		fi
 	fi
@@ -421,11 +421,11 @@ check_software () {
 			echo -n "Ueberpruefe ob $p installiert ist --> "
 			#if type -t $p >> $appdir/bin; then
 			if type -t $p >> /dev/null; then
-				echo -e "${gruen}okay${normal}"
+				echo -e "okay"
 				CutProg="avisplit"
 			else
-				echo -e "${rot}false${normal}"
-				echo -e "${gelb}Installieren Sie transcode!${normal}"
+				echo -e "false"
+				echo -e "Installieren Sie transcode!"
 				exit 1
 			fi
 		done
@@ -433,30 +433,28 @@ check_software () {
 
 	#Hier wird ueberprueft ob date zum umrechnen der Zeit benutzt werden kann
 	echo -n "Ueberpruefe welche Methode zum Umrechnen der Zeit benutzt wird --> "
-	date_var=$(date -u -d @120 +%T)
+	date_var=$(date -u -d @120 +%T 2>/dev/null)
 	if [ "$date_var" == "00:02:00" ]; then
-		echo -e "${blau}date${normal}"
-		date_okay=yes
+		echo -e "date"	 ; date_okay=yes
 	else
-		echo -e "${gelb}intern${normal}"
-		date_okay=no
+		echo -e "intern" ; date_okay=no
 	fi
 
 	#Hier wird ueberprueft ob der richtige Pfad zum Decoder angegeben wurde
 	if [ "$decoded" == "yes" ]; then
-		echo -n "Überpruefe ob der Decoder-Pfad richtig gesetzt wurde --> "
+		echo -n "Ueberpruefe ob der Decoder-Pfad richtig gesetzt wurde --> "
 		if $decoder -v >> /dev/null; then
-			echo -e "${gruen}okay${normal}"
+			echo "okay"
 		else
-			echo -e "${rot}false${normal}"
+			echo "false"
 			exit 1
 		fi
 	if [ "$email" == "" ]; then
-		echo -e "${rot}EMail-Adresse wurde nicht gesetzt.${normal}"
+		echo "EMail-Adresse wurde nicht gesetzt."
 		exit 1
 	fi
 	if [ "$password" == "" ]; then
-		echo -e "${rot}Passwort wurde nicht gesetzt.${normal}"
+		echo "Passwort wurde nicht gesetzt."
 		exit 1
 	fi
 fi
@@ -494,17 +492,17 @@ setoutputfile () {
 		film_ohne_ende=${film%%.mpg.HQ.avi}	#Filmname ohne Dateiendung
 		CUTLIST=${CUTLIST/.avi/}.cutlist	#Der lokale Cutlistname
 		format=hq
-		echo -e "${blau}HQ${normal}"
+		echo -e "HQ"
 	elif echo "$film_ohne_anfang" | grep -q ".mp4"; then	#Wenn es sich um eine "mp4" Aufnahme handelt
 		film_ohne_ende=${film%%.mpg.mp4}	#Filmname ohne Dateiendung
 		format=mp4
 		CUTLIST=${CUTLIST/.mp4/}.cutlist	#Der lokale Cutlistname
-		echo -e "${blau}mp4${normal}"
+		echo -e "mp4"
 	else
 		film_ohne_ende=${film%%.mpg.avi}	#Filmename ohne Dateiendung
 		format=avi
 		CUTLIST=${CUTLIST/.avi/}.cutlist	#Der lokale Cutlistname
-		echo -e "${blau}avi${normal}"
+		echo -e "avi"
 	fi
 
 	if echo "$film" | grep / >> /dev/null; then	#Wenn der Dateiname einen Pfad enthaelt
@@ -556,7 +554,7 @@ getlocalcutlist () {
 	continue=1
 	## Check, ob ueberhaupt cut-Listen vorhanden sind:
 	if [ -z "$local_cutlists" ]; then 
-		echo -e "${rot}Keine einzige *.cutlist Datei gefunden!${normal}"
+		echo -e "Keine einzige *.cutlist Datei gefunden!"
 		if [ "$HaltByErrors" == "yes" ]; then exit 1 ; fi
 	fi
 
@@ -564,13 +562,13 @@ getlocalcutlist () {
 	for f in $local_cutlists; do
 		OriginalFileSize=$(cat $f | grep OriginalFileSizeBytes | cut -d"=" -f2 | /usr/bin/tr -d "\r")	#Dateigroesse des Films
 		if cat "$f" | grep -q "$film"; then	#Wenn der Dateiname mit ApplyToFile uebereinstimmt
-			echo -e -n "${blau}ApplyToFile ${normal}"
+			echo -e -n "ApplyToFile "
 			goodCount=$(( goodCount + 1 ))
 			match_cutlists="$match_cutlists $f"
 		fi
 		# Wenn die Dateigroesse mit OriginalFileSizeBytes uebereinstimmt
 		if [ "$OriginalFileSize" == "$filesize" ]; then
-			echo -e -n "${blau}OriginalFileSizeBytes${normal}"
+			echo -e -n "OriginalFileSizeBytes"
 			goodCount=$(( goodCount + 1 ))
 			match_cutlists="$match_cutlists $f"
 		fi
@@ -596,7 +594,7 @@ getlocalcutlist () {
 		echo -n "Bitte die Nummer der zu verwendenden Cutlist eingeben: "
 		read NUMBER
 		while [ "$NUMBER" -gt "$goodCount" ]; do
-			echo "${rot}false. Noch mal:${normal}"
+			echo "false. Noch mal:"
 			read NUMBER
 		done
 		number=0
@@ -619,79 +617,51 @@ getcutlist () {
 	else
 		server="http://cutlist.at/"
 	fi
-
-	#echo $server
 	
-	echo -e "Bearbeite folgende Datei: ${blau}$film${normal}"
-	sleep 1
+	echo -e "Bearbeite folgende Datei: $film"
 	if [ "$decoded" == "yes" ]; then
 		filesize=$(ls -l "$output/$film" | awk '{ print $5 }')
 	else
 		filesize=$(ls -l "$film" | awk '{ print $5 }')
 	fi
-	echo "filesize = $filesize"
-	echo -n "Fuehre Suchanfrage anhand der Dateigroessee '$filesize' bei \"cutlist.at\" durch ---> "
-	wget -q -O "$tmp/search.xml" "${server}getxml.php?version=0.9.8.0&ofsb=$filesize" &&
+	##echo "getcutlist: filesize = $filesize"
 	
-	
-	#??? Abschnitt ueberarbeiten
-	if grep -q '<id>' "$tmp/search.xml"; then
-		echo -e "${gruen}okay${normal}"
-	else
-		echo "Keine Cutlist anhand der Dateigroeße gefunden!"
-		echo -n "Fuehre Suchanfrage anhand des Dateinamens bei \"cutlist.at\" durch ---> "
+	echo -n "Fuehre Suchanfrage anhand der Dateigroesse '$filesize' bei '$server' durch ---> "
+	wget -q -O "$tmp/search.xml" "${server}getxml.php?version=0.9.8.0&ofsb=$filesize"
+	rc=$?
+	if [ $rc -gt 0 ]; then
+		echo ""
+		echo "getcutlist: beim Holen der cutlist vom Server '$server' trat ein Fehler (rc=$rc) auf --> Abbruch"
+		echo ""
+		exit 1
+	fi
+	# Check, ob ueberhaupt cutlisten in der search.xml enthalten sind
+	if ! grep -q '<id>' "$tmp/search.xml"; then
+		echo "Keine cutlist anhand der Dateigroesse '$filesize' gefunden!"
+		## Alternative Suchanfrage ueber Dateinamen
 		filmdateiname=`basename $film`
-	#	echo -n "${server}getxml.php?version=0.9.8.0&name=$filmdateiname"
-		wget -q -O "$tmp/search.xml" "${server}getxml.php?version=0.9.8.0&name=$filmdateiname" &&
-		if grep -q '<id>' "$tmp/search.xml"; then
-			echo -e "${gruen}okay${normal}"
-		else
-			echo -e "${rot}false${normal}"
-			if [ "$HaltByErrors" == "yes" ]; then
-				exit 1
-			else
-				continue=1
-			fi
+		echo -n "Fuehre Suchanfrage anhand des Dateinamens '$filmdateiname' bei '$server' durch ---> "
+		wget -q -O "$tmp/search.xml" "${server}getxml.php?version=0.9.8.0&name=$filmdateiname"
+		if [ $rc -gt 0 ]; then
+			echo ""
+			echo "getcutlist: beim Holen der cutlist vom Server '$server' trat ein Fehler (rc=$rc) auf --> Abbruch"
+			echo ""
+			exit 1
+		fi
+		if ! grep -q '<id>' "$tmp/search.xml"; then
+			echo ""
+			echo "Keine cutlist anhand des Dateinamens'$filmdateiname' gefunden!"
+			echo ""
+			exit 1
 		fi
 	fi
 	
-	
-	#Hier wird die Suchanfrage ueberprueft
-	if [ "$continue" == "1" ]; then
-		echo -e "${rot}Es wurden keine Cutlists auf cutlist.at gefunden.${normal}"
-		if [ "$HaltByErrors" == "yes" ]; then
-			exit 1
-		elif [ "$toprated" == "no" ] && [ "$copy" == "no" ]; then
-			continue=1
-			echo -e "${blau}Soll \"$film\" in den Ausgabeordner kopiert erden? [y|n]${normal}"
-			read COPY
-			while [ "$COPY" == "" ] || [ ! "$COPY" == "y" ] && [ ! "$COPY" == "n" ]; do #Bei falscher Eingabe
-				echo -e "${gelb}Falsche Eingabe, bitte nochmal:${normal}"
-				read COPY
-			done
-			if [ "$COPY" == "n" ]; then	#Wenn der Benutzer nein "sagt"
-				echo "Datei wird nicht kopiert."
-			elif [ "$COPY" == "y" ]; then	#Wenn der Benutzer ja "sagt"
-				echo "Datei wird in den Ausgabeordner kopiert."
-				cp "$film" "$output/"
-			fi
-		elif [ "$copy" == "yes" ]; then
-			echo "Datei wird in den Ausgabeordner kopiert."
-			cp "$film" "$output/"
-		fi
-	else
-		if [ "$schon_mal_angezeigt" == "" ]; then
-			echo -e "${blau}Cutlist/s gefunden.${normal}"
-			echo ""
-			echo "Es wurden folgende Cutlists gefunden:"
-			schon_mal_angezeigt=yes
-			array=0
-		fi
-		cutlist_anzahl=$(grep -c '/cutlist' "$tmp/search.xml" | /usr/bin/tr -d "\r") #Anzahl der gefundenen Cutlists
-		if [ "$cutlist_anzahl" -ge "1" ] && [ "$continue" == "0" ]; then #Wenn mehrere Cutlists gefunden wurden
-			echo ""
-			tail=1
-			while [ "$cutlist_anzahl" -gt "0" ]; do
+	array=0
+	cutlist_anzahl=$(grep -c '/cutlist' "$tmp/search.xml" | /usr/bin/tr -d "\r") #Anzahl der gefundenen Cutlists
+	if [ "$cutlist_anzahl" -ge "1" ] && [ "$continue" == "0" ]; then #Wenn mehrere Cutlists gefunden wurden
+		echo ""
+		tail=1
+		while [ "$cutlist_anzahl" -gt "0" ]; do
 				#Name der Cutlist
 				name[$array]=$(grep "<name>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
 				#Author der Cutlist
@@ -712,21 +682,22 @@ getcutlist () {
 				cutinframes[$array]=$(grep "<withframes>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
 				#Filename der Cutlist
 				filename[$array]=$(grep "<filename>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
-	
+
+			## interaktive cutlist-Auswahl 
 			if [ "$toprated" == "no" ]; then #Wenn --toprated nicht gesetzt ist
 				if echo $cutlistWithError | grep -q "${ID[$array]}"; then #Wenn Fehler gesetzt ist z.B. EPG-Error oder MissingBeginning
-					echo -ne "${rot}"
+					echo -ne ""
 				fi
 				echo -n "[$array]"
 				echo " Name: ${name[$array]}"
 				echo " Author: ${author[$array]}"
 				echo " Rating by Author: ${ratingbyauthor[$array]}"
 				if [ -z "$cutlistWithError" ]; then
-					echo -ne "${gruen}"
+					echo -ne ""
 				fi
 				echo " Rating by Users: ${rating[$array]} @ ${ratingcount[$array]} Users"
 				if [ -z "$cutlistWithError" ]; then
-					echo -ne "${normal}"
+					echo -ne ""
 				fi
 				if [ "${cutinframes[$array]}" == "1" ]; then
 					echo " Cutangabe: Als Frames"
@@ -740,20 +711,17 @@ getcutlist () {
 				#echo " Server: ${server[$array]}"
 				echo ""
 				if echo $cutlistWithError | grep -q "${ID[$array]}"; then #Wenn Fehler gesetzt ist z.B. EPG-Error oder MissingBeginning
-				echo -ne "${normal}"
+					echo ""
 				fi
 			fi
 			tail=$((tail + 1))
 			cutlist_anzahl=$((cutlist_anzahl - 1))
 			array=$(( array + 1))
 			array1=array
-			done
-	
-			if [ "$toprated" == "yes" ]; then # Wenn --toprated gesetzt wurde
-				if [ "$angezeigt" == "" ]; then
-					echo "Lade die Cutlist mit der besten User-Bewertung herunter."
-					angezeigt=yes
-				fi
+		done	
+		## automatische cutlist-Auswahl
+		if [ "$toprated" == "yes" ]; then # Wenn --toprated gesetzt wurde
+				echo "Lade die Cutlist mit der besten User-Bewertung herunter."
 				array1=$(( array1 - 1))
 				while [ $array1 -ge 0 ]; do
 					rating1[$array1]=${rating[$array1]}
@@ -780,7 +748,6 @@ getcutlist () {
 	
 				beste_bewertung=${bigest%%??}	#Die beste Wertung ohne Dezimalpunkt
 				beste_bewertung_punkt=$beste_bewertung.${bigest##?}	#Die beste Wertung mit Dezimalpunkt
-			fi
 		fi
 	fi
 	
@@ -789,9 +756,7 @@ getcutlist () {
 		echo "Die beste Bewertung ist: $beste_bewertung"
 		bereits_toprated=yes
 	
-		if [ "$beste_bewertung" == "0" ]; then
-			beste_bewertung="</rating>"
-		fi
+		if [ "$beste_bewertung" == "0" ]; then beste_bewertung="</rating>" ; fi
 	
 		cutlist_nummer=$(grep "<rating>" "$tmp/search.xml" | grep -n "<rating>$beste_bewertung" | cut -d: -f1 | head -n1)
 		id=$(grep "<id>" "$tmp/search.xml" | head -n$cutlist_nummer | tail -n1 | cut -d">" -f2 | cut -d"<" -f1) #ID der best bewertetsten Cutlist
@@ -799,23 +764,21 @@ getcutlist () {
 		id_downloaded=$(echo ${ID[$num]})
 		CUTLIST=$(grep "<name>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | head -n$cutlist_nummer | tail -n1 | /usr/bin/tr -d "\r") #Name der Cutlist
 	fi
-	
+	#	
 	if [ "$toprated" == "no" ] && [ "$continue" == "0" ]; then
-		array_groesse=$array
-		array_groesse=$(( array_groesse - 1))
+		array_groesse=$(( array - 1))
 		CUTLIST_ZAHL=""
 		while [ "$CUTLIST_ZAHL" == "" ]; do #Wenn noch keine Cutlist gewaehlt wurde
 			echo -n "Bitte die Nummer der zu verwendenden Cutlist eingeben: "
 			read CUTLIST_ZAHL #Benutzereingabe lesen
 			if [ -z "$CUTLIST_ZAHL" ]; then
-				echo -e "${gelb}Ungueltige Auswahl.${normal}"
+				echo -e "Ungueltige Auswahl."
 				CUTLIST_ZAHL=""
 			elif [ "$CUTLIST_ZAHL" -gt "$array_groesse" ]; then
-				echo -e "${gelb}Ungueltige Auswahl.${normal}"
+				echo -e "Ungueltige Auswahl."
 				CUTLIST_ZAHL=""
 			fi
-		done
-		array_groesse=$CUTLIST_ZAHL
+		done	
 		CUTLIST_ZAHL=$(( CUTLIST_ZAHL + 1))
 		id=$(grep "<id>" "$tmp/search.xml" | tail -n$CUTLIST_ZAHL | head -n1 | cut -d">" -f2 | cut -d"<" -f1)
 		num=$(( CUTLIST_ZAHL - 1))
@@ -825,19 +788,13 @@ getcutlist () {
 	
 	if [ "$continue" == "0" ]; then
 		echo -n "Lade $CUTLIST -->"
-		#echo $id
 		wget -q -O "$tmp/$CUTLIST" "${server}getfile.php?id=$id"
 		test_cutlist # Testen der Cutlist
 		if [ -f "$tmp/$CUTLIST" ] && [ "$cutlist_okay" == "yes" ]; then
-			echo -e "${gruen}okay${normal}"
+			echo "okay"
 			continue=0
 		else
-			echo -e "${rot}false${normal}"
-			if [ "$HaltByErrors" == "yes" ]; then
-				exit 1
-			else
-				continue=1
-			fi
+			echo "false"
 		fi
 	fi
 } ## END getcutlist ##
@@ -848,19 +805,15 @@ getcutlist () {
 checkcutlist () {
 	echo -n "Checke cutlist (Format oder ob Download OK)  --> "
 	if cat "$tmp/$CUTLIST" | grep "StartFrame=" >> /dev/null; then
-		echo -e "${blau}Frames${normal}"
+		echo "Frames"
 		format=frames
-		elif cat "$tmp/$CUTLIST" | grep "Start=" >> /dev/null; then
-			echo -e "${blau}Zeit${normal}"
-			format=zeit
-		else
-			echo -e "${rot}false${normal}"
-			echo -e "${rot}Wahrscheinlich wurde das Limit von cutlist.de ueberschritten!${normal}"
-		if [ "$HaltByErrors" == "yes" ]; then
-			exit 1
-		else
-			continue=1
-		fi
+	elif cat "$tmp/$CUTLIST" | grep "Start=" >> /dev/null; then
+		echo "Zeit"
+		format=zeit
+	else
+		echo "false"
+		echo  "Wahrscheinlich wurde das Limit von Server '$server' ueberschritten!"
+		exit 1
 	fi
 } ## END checkcutlist ##
 
@@ -873,17 +826,17 @@ cutlist_error () {
 	for e in $errors; do
 		error_check=$(cat "$tmp/$CUTLIST" | grep -m1 $e | cut -d"=" -f2 | /usr/bin/tr -d "\r")
 		if [ "$error_check" == "1" ]; then
-			echo -e "${rot}Es wurde ein Fehler gefunden: \"$e\"${normal}"
+			echo -e "Es wurde ein Fehler gefunden: \"$e\""
 			error_yes=$e
 			if [ "$error_yes" == "OtherError" ]; then
 				othererror=$(cat "$tmp/$CUTLIST" | grep "OtherErrorDescription")
 				othererror=${othererror##*=}
-				echo -e "${rot}Grund fuer \"OtherError\": \"$othererror\"${normal}"
+				echo -e "Grund fuer \"OtherError\": \"$othererror\""
 			fi
 			if [ "$error_yes" == "EPGError" ]; then
 				epgerror=$(cat "$tmp/$CUTLIST" | grep "ActualContent")
 				epgerror=${epgerror##*=}
-				echo -e "${rot}ActualContent: $epgerror${end}"
+				echo -e "ActualContent: $epgerror${end}"
 			fi
 			error_found=1
 			cutlistWithError="${cutlistWithError} $id_downloaded"
@@ -922,7 +875,7 @@ aspectratio () {
 	#echo $aspectR
 
 	if [ "$aspectR" -eq 0 ] ; then
-		echo -e "${rot}false${normal}"
+		echo -e "false"
 		if [ "$smart" == "no" ]; then
 			aspect=169
 		else
@@ -938,11 +891,11 @@ aspectratio () {
 		fi
 	fi
 	if [ $aspectR -eq 1 ] ; then
-		echo -e "${blau}4:3"${normal}
+		echo -e "4:3"
 		aspect=43
 	fi
 	if [ $aspectR -eq 2 ] ; then
-		echo -e "${blau}16:9${normal}"
+		echo -e "16:9"
 		aspect=169
 	fi
 } ## END aspectratio ##
@@ -1092,7 +1045,7 @@ do_split_merge () {
 		$appdir/bin/nice -n 15 $appdir/bin/avisplit -i "$film" -o "$outputfile" -t $time -c
 	fi
 	if [ -f "$outputfile" ]; then
-		echo -e "${gruen}outputfile '$outputfile' wurde erstellt${normal}"
+		echo -e "outputfile '$outputfile' wurde erstellt"
 	
 		# DSM Benachrichtigung:
 		if [ "$OTRRENAMEACTIVE" == "on" ] ; then
@@ -1123,7 +1076,7 @@ do_split_merge () {
 			fi
 		fi
 	else
-		echo -e "${rot}Avisplit oder avimerge muss einen Fehler verursacht haben.${normal}"
+		echo -e "Avisplit oder avimerge muss einen Fehler verursacht haben."
 		if [ "$HaltByErrors" == "yes" ]; then
 			exit 1
 		else
@@ -1268,7 +1221,6 @@ demux () {
 	fi
 	
 	echo "#####ENDE#####"
-	sleep 1
 	
 	if [ "$ad_version" == "old" ]; then
 		if echo "$film_ohne_anfang" | grep -q ".HQ."; then
@@ -1312,8 +1264,8 @@ demux () {
 	fi
 	## Check, ob outputfile ordentlich generiert wurde
 	if [ -f "$outputfile" ]; then
-		echo -n -e  ${gruen}$outputfile${normal}
-		 	echo -e "${gruen} wurde erstellt${normal}"
+		echo -n -e  $outputfile
+		 	echo -e " wurde erstellt"
 		if [ "$delete" == "yes" ]; then
 			echo "Loesche Quellvideo."
 			if [ $decoded == "yes" ]; then
@@ -1324,12 +1276,8 @@ demux () {
 			fi
 		fi
 	else
-		echo -e "${rot}Avidemux muss einen Fehler verursacht haben${normal}"
-		if [ $HaltByErrors == "yes" ]; then
-			  exit 1
-		else
-			  continue=1
-		fi
+		echo -e "Avidemux muss einen Fehler verursacht haben"
+	  	exit 1
 	fi
 } ## END demux  ##
 
@@ -1354,7 +1302,7 @@ bewerte_cutlist () {
 	read note
 	while [ ! "$note" == "" ] && [ "$note" -gt "5" ]; do
 		note=""
-	 	echo -e "${gelb}Ungueltige Eingabe, bitte nochmal:${normal}"
+	 	echo -e "Ungueltige Eingabe, bitte nochmal:"
 	  	read note
 	done
 	if [ "$note" == "" ]; then
@@ -1369,21 +1317,21 @@ bewerte_cutlist () {
 		sleep 1
 		if [ -f "$tmp/rate.php" ]; then
 			if cat "$tmp/rate.php" | grep -q "Cutlist nicht von hier. Bewertung abgelehnt."; then
-					echo -e " ${rot}False${normal}"
-		  			echo -e " ${rot}Die Cutlist ist nicht von http://cutlist.at und kann nicht bewertet werden.${normal}"
+					echo -e " False"
+		  			echo -e " Die Cutlist ist nicht von http://cutlist.at und kann nicht bewertet werden."
 		   	elif cat "$tmp/rate.php" | grep -q "Du hast schon eine Bewertung abgegeben oder Cutlist selbst hochgeladen."; then
-		   	   	echo -e " ${rot}False${normal}"
-			  		echo -e "${rot}Du hast fuer die Cutlist schonmal eine Bewertung abgegeben oder sie selbst hochgeladen.${normal}"
+		   	   	echo -e " False"
+			  		echo -e "Du hast fuer die Cutlist schonmal eine Bewertung abgegeben oder sie selbst hochgeladen."
 			elif cat "$tmp/rate.php" | grep -q "Sie haben diese Liste bereits bewertet"; then
-			  		echo -e " ${rot}False${normal}"
-			  		echo -e "${rot}Du hast fuer die Cutlist schonmal eine Bewertung abgegeben oder sie selbst hochgeladen.${normal}"
+			  		echo -e " False"
+			  		echo -e "Du hast fuer die Cutlist schonmal eine Bewertung abgegeben oder sie selbst hochgeladen."
 		   	elif cat "$tmp/rate.php" | grep -q "Cutlist wurde bewertet"; then
-			  		echo -e "${gruen}Okay${normal}"
-			  		echo -e "${gruen}Cutlist wurde bewertet${normal}"
+			  		echo -e "Okay"
+			  		echo -e "Cutlist wurde bewertet"
 		   	fi
 	   	else
-		  	echo -e "${rot}False${normal}"
-		  	echo -e "${rot}Bewertung fehlgeschlagen.${normal}"
+		  	echo -e "False"
+		  	echo -e "Bewertung fehlgeschlagen."
 	   	fi
 	fi
 } ## END bewerte_cutlist ##
@@ -1399,11 +1347,11 @@ decode_otrkey () {
 	if echo $OTRKEYDatei | grep -q .otrkey; then
 		if [ ! "$email_checked" == "yes" ]; then
 			if [ "$email" == "" ]; then
-				echo -e "${rot}Kann nicht dekodieren da keine EMail-Adresse angegeben wurde!${normal}"
+				echo -e "Kann nicht dekodieren da keine EMail-Adresse angegeben wurde!"
 				exit 1
 			fi
 			if [ "$password" == "" ]; then
-				echo -e "${rot}Kann nicht dekodieren da kein Passwort angegeben wurde!${normal}"#
+				echo -e "Kann nicht dekodieren da kein Passwort angegeben wurde!"#
 				exit 1
 			fi
 		else
@@ -1423,7 +1371,7 @@ decode_otrkey () {
 # Hier werden die temporaeren Dateien geloesc
 del_tmp () {
 	if [ "$tmp" == "" ] || [ "$tmp" == "/" ] || [ "$tmp" == "/home" ]; then
-		echo -e "${rot}Achtung, bitte ueberpruefen Sie die Einstellung von \$tmp${normal}"
+		echo -e "Achtung, bitte ueberpruefen Sie die Einstellung von \$tmp"
 		exit 1
 	fi
 	echo "Loesche temporaere Dateien in $tmp/"
@@ -1473,6 +1421,7 @@ done
 # Konfiguration fuer synOTR sourcen:
 . $synotrconf ### ??? noch besser verankern, z.B. fuer Standaloneaufruf
 echo "detailierte Ausgabe aktiv: $verbose"
+
 
 
 
