@@ -19,6 +19,7 @@
 #		https://github.com/adlerweb/otrcut.sh/blob/master/otrcut.sh
 #
 ##############################################################################
+Script="${0##*/}" ; Script=${Script%*.sh}; ScriptParameter="$@"; Scriptpath=${0%/*}
 
 version=20150503	# Die Version von OtrCut, Format: yyyymmdd, yyyy=Jahr mm=Monat dd=Tag
 LocalCutlistOkay=no	# Ist die lokale Cutlist vorhanden?
@@ -30,13 +31,6 @@ cutlistWithError=""	# Cutlists die, einen Fehler haben
 delete=no
 continue=0
 aspect=169 #	=43 oder =169 Standard-Seitenverhaeltnis
-
-#	Schriftfarben dekativier, um Log in Systemshell besser lesbar zu machen:
-rot=""		#"\033[22;31m"	#Rote Schrift
-gruen=""	#"\033[22;32m"	#Gruene Schrift
-gelb=""		#"\033[22;33m"	#Gelbe Schrift
-blau=""		#"\033[22;34m"	#Blaue Schrift
-normal=""	#"\033[0m"		#Normale Schrift
 
 # Dieses Variablen werden gesetzt, sofern aber ein Config-File besteht wieder ueberschrieben
 UseLocalCutlist=no	# Lokale Cutlists verwenden?
@@ -77,6 +71,7 @@ personalurl=""			#Die persoenliche URL von cutlist.at
 # 0: do not print anything to console  1: print only errors to console
 # 2: print errors and info to console  3: print errors, info and debug logs to console
 VERBOSE=1
+DEBUG=false	# =true oder =false
 LOGFILE=$appdir/OTRcut.log	# ??? sinnvoller Ort muss noch gefunden werden ????
 
 
@@ -240,14 +235,13 @@ update () {
 	online_version=$(wget -q -O - http://otrcut.siggimania4u.de/version | /usr/bin/tr -d "\r")
 	#online_version="0.0" ## URL funktioniert nicht mehr
 	if [ "$online_version" -gt "$version" ]; then
-		echo -e "Es ist eine neue Version verfuegbar."
-		echo -e "Verwendete Version: $version "
-		echo -e "Aktuelle Version: $online_version "
-		echo "Die neue Version kann unter \"http://otrcut.siggimania4u.de\" heruntergeladen werden."
+		echo "Es ist eine neue Version verfuegbar."
+		echo "Verwendete Version: $version "
+		echo "Aktuelle Version: $online_version "
+		echo "Die neue Version kann unter 'http://otrcut.siggimania4u.de' heruntergeladen werden."
 	else
-		echo -e "Es wurde keine neuere Version gefunden."
+		echo -e "Es wurde keine neuere Version des Skriptes gefunden."
 	fi
-
 	exit 0
 } ## END update ##
 
@@ -262,7 +256,7 @@ loeschwarnung () {
 		echo "Das Script wird alle Dateien in $tmp/otrcut loeschen!"
 		echo "Sie haben 5 Sekunden um das Script ueber STRG+C abzubrechen"
 		i=0;
-		while [ $i -lt 6 ]; do i=$(( i + 1 )); echo -n "$i " ; sleep 1 ; done
+		while [ $i -lt 6 ]; do i=$(( i + 1 )); echo -n "$i.. " ; sleep 1 ; done
 		echo -e "\n\n\n"
 	fi
 } ## END loeschwarnung ##
@@ -289,18 +283,15 @@ dateihinweis () {
 checkENV () {
 	#Hier wird ueberprueft ob eine Eingabedatei angegeben ist
 	if [ -z "$i" ]; then
-		echo "Es wurde keine Eingabedatei angegeben!"
-		exit 1
+		fehler "Es wurde keine Eingabedatei angegeben!"
 	fi
 	# Ueberpruefe ob angegebene Datei existiert
 	if [ ! -f "$i" ]; then
-		echo -e "Eingabedatei nicht gefunden!"
-		exit 1
+		fehler "Eingabedatei nicht gefunden!"
 	fi
 	#Hier wird ueberprueft ob die Option -p, --play richtig gesetzt wurde ### ??? dieser Check gehoert zum globalen Check ###
 	if [ "$play" == "yes" ] && [ "$bewertung" == "no" ]; then
-		echo -e "\"Play\" kann nur in Verbindung mit \"Bewertung\" benutzt werden."
-		exit 1
+		fehler "'Play' kann nur in Verbindung mit 'Bewertung' benutzt werden."
 	fi
 
 	# Hier wird ueberprueft ob der Standard-Ausgabeordner verwendet werden soll.
@@ -313,16 +304,14 @@ checkENV () {
 				mkdir cut
 				echo "Verwende $PWD/cut als Ausgabeordner"
 			else
-				echo -e "Sie haben keine Schreibrechte im aktuellen Verzeichnis ($PWD)."
-				exit 1
+				fehler "Sie haben keine Schreibrechte im aktuellen Verzeichnis ($PWD)."
 			fi
 		fi
 	else
 		if [ -d "$output" ] && [ -w "$output" ]; then
 			echo "Verwende $output als Ausgabeordner."
 		elif [ -d "$output" ] && [ ! -w "$output" ]; then
-			echo -e "Sie haben keine Schreibrechte in $output."
-			exit 1
+			fehler "Sie haben keine Schreibrechte in $output."
 		else
 			echo -e "Das Verzeichnis $output wurde nicht gefunden, soll er erstellt werden? [y|n]"
 			read OUTPUT
@@ -331,17 +320,11 @@ checkENV () {
 				read OUTPUT
 			done
 			if [ "$OUTPUT" == "n" ]; then	#Wenn der Benutzer nein "sagt"
-				echo "Ausgabeverzeichnis \"$output\" soll nicht erstellt werden."
-				exit 1
+				fehler "Ausgabeverzeichnis '$output' soll nicht erstellt werden."
 			elif [ "$OUTPUT" == "y" ]; then	#Wenn der Benutzer ja "sagt"
 				echo -n "Erstelle Ordner $output -->"
-				mkdir "$output"
-				if [ -d "$output" ]; then
-					echo -e "okay"
-				else
-					echo -e "false"
-					exit 1
-				fi
+				output=/xx
+				[ ! -d "$output" ] || mkdir "$output" || fehler "Kann Ausgabeordner '$output' nicht erstellt werden."
 			fi
 		fi
 	fi
@@ -354,39 +337,36 @@ checkENV () {
 		if [ ! -d "/tmp/otrcut" ]; then
 			if [ -w /tmp ]; then
 				mkdir "/tmp/otrcut"
-				echo "Verwende $tmp als Ausgabeordner"
+				log info "Verwende $tmp als Ausgabeordner"
 				#tmp="$tmp/otrcut"
 			else
-				echo -e "Sie haben keine Schreibrechte in /tmp/ ${end}"
-				exit 1
+				fehler "Sie haben keine Schreibrechte in /tmp/ "
 			fi
 		fi
 	else
 		if [ -d "$tmp" ] && [ -w "$tmp" ]; then
 			mkdir "$tmp/otrcut"
-			echo "Verwende $tmp/otrcut als Ausgabeordner."
+			log "Verwende '$tmp/otrcut' als Ausgabeordner."
 			tmp="$tmp/otrcut"
 		elif [ -d "$tmp" ] && [ ! -w "$tmp" ]; then
-			echo -e "Sie haben keine Schreibrechte in $tmp!${end}"
+			fehler "Sie haben keine Schreibrechte in $tmp!"
 		else
-			echo -e "$tmp wurde nicht gefunden, soll er erstellt werden? [y|n]${end}"
+			echo -e "$tmp wurde nicht gefunden, soll er erstellt werden? [y|n]"
 			read TMP	#Lesen der Benutzereingabe nach $TMP
 			while [ "$TMP" == "" ] || [ ! "$TMP" == "y" ] && [ ! "$TMP" == "n" ]; do	#Bei falscher Eingabe
-				echo -e "Falsche Eingabe, bitte nochmal:${end}"
+				echo -e "Falsche Eingabe, bitte nochmal:"
 				read TMP	#Lesen der Benutzereingabe nach $TMP
 			done
 			if [ $TMP == n ]; then	#Wenn der Benutzer nein "sagt"
-				echo "Tempverzeichnis \"$tmp\" soll nicht erstellt werden."
-				exit 1
+				fehler "Tempverzeichnis '$tmp' soll nicht erstellt werden."
 			elif [ $TMP == y ]; then	#Wenn der Benutzer ja "sagt"
 				echo -n "Erstelle Ordner $tmp --> "
 				mkdir "$tmp/otrcut"
 				if [ -d "$tmp/otrcut" ]; then
-					echo -e "okay${end}"
+					echo -e "okay"
 					tmp="$tmp/otrcut"
 				else
-					echo -e "false${end}"
-					exit 1
+					fehler "Anlage von '$tmp/otrcut' war schlug fehl"
 				fi
 			fi
 		fi
@@ -400,7 +380,7 @@ check_software () {
 	if [ "$UseAvidemux" == "yes" ]; then
 		for s in avidemux2_cli avidemux2_qt4 avidemux2_gtk avidemux2 avidemux; do
 			if [ -z "$CutProg" ]; then
-				echo -n "Überpruefe ob $s installiert ist --> "
+				echo -n "Ueberpruefe ob $s installiert ist --> "
 				if type -t $s >> /dev/null; then
 					echo -e "okay"
 					CutProg="$s"
@@ -410,23 +390,19 @@ check_software () {
 			fi
 		done
 		if [ -z "$CutProg" ]; then
-			echo -e "Bitte installieren sie avidemux, oder verwenden sie die Optione \"-a\"!"
-			exit 1
+			fehler "Bitte installieren sie avidemux, oder verwenden sie die Optione \"-a\"!"
 		fi
 	fi
 
 	#Hier wird ueberprueft ob avisplit und avimerge installiert sind
 	if [ "$UseAvidemux" == "no" ]; then
 		for p in $appdir/bin/avisplit $appdir/bin/avimerge; do
-			echo -n "Ueberpruefe ob $p installiert ist --> "
-			#if type -t $p >> $appdir/bin; then
+			echo -n "Ueberpruefe ob Programm '$p' installiert ist --> "
 			if type -t $p >> /dev/null; then
 				echo -e "okay"
 				CutProg="avisplit"
 			else
-				echo -e "false"
-				echo -e "Installieren Sie transcode!"
-				exit 1
+				fehler "Installieren Sie transcode!"
 			fi
 		done
 	fi
@@ -446,18 +422,11 @@ check_software () {
 		if $decoder -v >> /dev/null; then
 			echo "okay"
 		else
-			echo "false"
-			exit 1
+			fehler "Kann Programm 'otrdecoder' nicht finden"
 		fi
-	if [ "$email" == "" ]; then
-		echo "EMail-Adresse wurde nicht gesetzt."
-		exit 1
+		if [ -z "$email"	]; then fehler "EMail-Adresse wurde nicht gesetzt."	; fi
+		if [ -z "$password"	]; then fehler "Passwort wurde nicht gesetzt."		; fi
 	fi
-	if [ "$password" == "" ]; then
-		echo "Passwort wurde nicht gesetzt."
-		exit 1
-	fi
-fi
 } ## END check_software ##
 
 
@@ -554,8 +523,7 @@ getlocalcutlist () {
 	continue=1
 	## Check, ob ueberhaupt cut-Listen vorhanden sind:
 	if [ -z "$local_cutlists" ]; then 
-		echo -e "Keine einzige *.cutlist Datei gefunden!"
-		if [ "$HaltByErrors" == "yes" ]; then exit 1 ; fi
+		fehler "Keine einzige *.cutlist Datei gefunden!"
 	fi
 
 	echo -n "Ueberpruefe ob eine der gefundenen Cutlists zum Film passt --> "
@@ -615,6 +583,7 @@ getcutlist () {
 	if [ "$personal" == "yes" ]; then
 		server=$personalurl
 	else
+		# http://cutlist.de  http://cutlist.at  http://cutlist.mbod.net 
 		server="http://cutlist.at/"
 	fi
 	
@@ -630,10 +599,7 @@ getcutlist () {
 	wget -q -O "$tmp/search.xml" "${server}getxml.php?version=0.9.8.0&ofsb=$filesize"
 	rc=$?
 	if [ $rc -gt 0 ]; then
-		echo ""
-		echo "getcutlist: beim Holen der cutlist vom Server '$server' trat ein Fehler (rc=$rc) auf --> Abbruch"
-		echo ""
-		exit 1
+		fehler "getcutlist: beim Holen der cutlist vom Server '$server' trat ein Fehler (rc=$rc) auf --> Abbruch"
 	fi
 	# Check, ob ueberhaupt cutlisten in der search.xml enthalten sind
 	if ! grep -q '<id>' "$tmp/search.xml"; then
@@ -643,16 +609,10 @@ getcutlist () {
 		echo -n "Fuehre Suchanfrage anhand des Dateinamens '$filmdateiname' bei '$server' durch ---> "
 		wget -q -O "$tmp/search.xml" "${server}getxml.php?version=0.9.8.0&name=$filmdateiname"
 		if [ $rc -gt 0 ]; then
-			echo ""
-			echo "getcutlist: beim Holen der cutlist vom Server '$server' trat ein Fehler (rc=$rc) auf --> Abbruch"
-			echo ""
-			exit 1
+			fehler "getcutlist: beim Holen der cutlist vom Server '$server' trat ein Fehler (rc=$rc) auf --> Abbruch"
 		fi
 		if ! grep -q '<id>' "$tmp/search.xml"; then
-			echo ""
-			echo "Keine cutlist anhand des Dateinamens'$filmdateiname' gefunden!"
-			echo ""
-			exit 1
+			fehler "Keine cutlist anhand des Dateinamens'$filmdateiname' gefunden!"
 		fi
 	fi
 	
@@ -811,9 +771,7 @@ checkcutlist () {
 		echo "Zeit"
 		format=zeit
 	else
-		echo "false"
-		echo  "Wahrscheinlich wurde das Limit von Server '$server' ueberschritten!"
-		exit 1
+		fehler "Wahrscheinlich wurde das Abruf-Limit von Server '$server' ueberschritten!"
 	fi
 } ## END checkcutlist ##
 
@@ -836,7 +794,7 @@ cutlist_error () {
 			if [ "$error_yes" == "EPGError" ]; then
 				epgerror=$(cat "$tmp/$CUTLIST" | grep "ActualContent")
 				epgerror=${epgerror##*=}
-				echo -e "ActualContent: $epgerror${end}"
+				echo -e "ActualContent: $epgerror"
 			fi
 			error_found=1
 			cutlistWithError="${cutlistWithError} $id_downloaded"
@@ -1076,12 +1034,7 @@ do_split_merge () {
 			fi
 		fi
 	else
-		echo -e "Avisplit oder avimerge muss einen Fehler verursacht haben."
-		if [ "$HaltByErrors" == "yes" ]; then
-			exit 1
-		else
-			continue=1
-		fi
+		fehler "Avisplit oder avimerge muss einen Fehler verursacht haben."
 	fi
 } ## END do_split_merge ##
 
@@ -1276,8 +1229,7 @@ demux () {
 			fi
 		fi
 	else
-		echo -e "Avidemux muss einen Fehler verursacht haben"
-	  	exit 1
+		fehler "Avidemux muss einen Fehler verursacht haben"
 	fi
 } ## END demux  ##
 
@@ -1342,17 +1294,15 @@ bewerte_cutlist () {
 # Hier wird ein Otrkey-File dekodiert, falls es gewuenscht ist
 # ??? Fehlerhandling einbauen ???
 decode_otrkey () {
-	if [ -z "$1" ]; then echo "decode_otrkey: Dateiangabe fehlt --> Abbruch"; exit 1; fi
+	if [ -z "$1" ]; then fehler "decode_otrkey: Dateiangabe fehlt --> Abbruch"; fi
 	OTRKEYDatei="$1"
 	if echo $OTRKEYDatei | grep -q .otrkey; then
 		if [ ! "$email_checked" == "yes" ]; then
 			if [ "$email" == "" ]; then
-				echo -e "Kann nicht dekodieren da keine EMail-Adresse angegeben wurde!"
-				exit 1
+				fehler "Kann nicht dekodieren da keine EMail-Adresse angegeben wurde!"
 			fi
 			if [ "$password" == "" ]; then
-				echo -e "Kann nicht dekodieren da kein Passwort angegeben wurde!"#
-				exit 1
+				fehler "Kann nicht dekodieren da kein Passwort angegeben wurde!"#
 			fi
 		else
 			email_checked=yes
@@ -1371,8 +1321,7 @@ decode_otrkey () {
 # Hier werden die temporaeren Dateien geloesc
 del_tmp () {
 	if [ "$tmp" == "" ] || [ "$tmp" == "/" ] || [ "$tmp" == "/home" ]; then
-		echo -e "Achtung, bitte ueberpruefen Sie die Einstellung von \$tmp"
-		exit 1
+		fehler "Achtung, bitte ueberpruefen Sie die Einstellung von \$tmp"
 	fi
 	echo "Loesche temporaere Dateien in $tmp/"
 	rm -rf "$tmp"/*	# ??? gefaehrlich, spezifischer angeben ???
@@ -1383,30 +1332,41 @@ del_tmp () {
 ## Check Parameter
 ## - Hier werden die uebergebenen Option ausgewertet
 ##############################################################################
+
 while [ ! -z "$1" ]; do
 	case $1 in
 		-i | --input )	input="$input $2"
-				shift ;;
+						shift ;;
 		-a | --avisplit )	UseAvidemux=no ;;
 		-e | --error )	HaltByErrors=yes ;;
 		-d | --decode )	decode=yes ;;
 		--delete )	delete=yes ;;
 		-l | --local )	UseLocalCutlist=yes ;;
 		-t | --tmp )	tmp=$2
-				shift ;;
+						shift ;;
 		-o | --output )	output=$2
-				shift ;;
+						shift ;;
 		-ow | --overwrite )	overwrite=yes ;;
-		-v | --verbose )	verbose=yes ;;
+		-v | --verbose )
+			verbose=yes
+			VERBOSE=2
+			log info "Verbose-Modus aktiviert."
+			;;
+		debug|-debug|--debug)
+			verbose=yes
+			VERBOSE=3
+			DEBUG=true
+			log info "Debug-Modus aktiviert."
+			;;
 		-p | --play )	play=yes ;;
 		-b | --bewerten)	bewertung=yes ;;
+		--wd ) 	synotrconf=$2 ;;
 		-w | --warn )	warn=no ;;
 		-c | --copy )	copy=yes ;;
 		--personal )	personal=yes ;;
 		--toprated )	toprated=yes ;;
 		--deldir ) 	delfolder=$2 ;;
 		--lj ) 	lastjob=$2 ;;
-		--wd ) 	synotrconf=$2 ;;
 		--nosmart )	smart=no ;;
 		--vcodec )	  vidcodec="$2"
 								shift;;
@@ -1416,11 +1376,12 @@ while [ ! -z "$1" ]; do
 	esac
 	shift
 done
+if [ $VERBOSE -gt 2 ]; then DEBUG=true ; else  DEBUG=false ; fi
 
-
-# Konfiguration fuer synOTR sourcen:
+##################
+## Lade synOTR Konfigurationsfile, fuer Pfade usw.
 . $synotrconf ### ??? noch besser verankern, z.B. fuer Standaloneaufruf
-echo "detailierte Ausgabe aktiv: $verbose"
+echo "verboselevel: verbose=$verbose -- VERBOSE=$VERBOSE -- DEBUG=$DEBUG"
 
 
 
@@ -1431,23 +1392,15 @@ echo "detailierte Ausgabe aktiv: $verbose"
 #	Hauptprogramm ??? soll mal so sein, Code muss noch angepasst werden ???
 ##############################################################################
 if [ "$warn" == "yes" ]; then loeschwarnung ; fi
-dateihinweis # ??? nur wenn noetig oder ganz weg, bitte ueberarbeiten ###
+#dateihinweis # ??? nur wenn noetig oder ganz weg, bitte ueberarbeiten ###
 
-#if [ "$server" == "0" ]; then
-#   	echo "Verwende  http://cutlist.de als Server."
-#elif [ "$server" == "1" ]; then
-#   	echo "Verwende http://cutlist.at als Server"
-#elif [ "$server" == "2" ]; then
-#   	echo "Verwende http://cutlist.mbod.net als Server"
-#fi
 check_software	## ob vorhanden oder in welcher Version
 for i in ${input}; do
 	checkENV	## checkt: angegebene Datei, TMP- und cut-Verzeichnis
 	del_tmp
-	decode_otrkey $i
+#	decode_otrkey $i
 	setoutputfile
   	if [ "$UseLocalCutlist" == "yes" ]; then getlocalcutlist ; fi
-
    	while true; do
 		if [ "$UseLocalCutlist" == "no" ] || [ "$vorhanden" == "no" ]; then getcutlist ; fi
 		if [ "$continue" == "0" ]; then checkcutlist ; fi
@@ -1455,10 +1408,10 @@ for i in ${input}; do
 		if [ "$continue" == "0" ]; then get_fps ; fi
 		if [ "$continue" == "0" ]; then cutlist_error ; fi
 		if [ "$error_found" == "1" ] && [ "$toprated" == "no" ]; then
-			echo -e "${gelb}In der Cutlist wurde ein Fehler gefunden, soll sie verwendet werden? [y|n]${normal}"
+			echo -e "In der Cutlist wurde ein Fehler gefunden, soll sie verwendet werden? [y|n]"
 			read error_antwort
 			if [ "$error_antwort" == "y" ]; then
-				echo -e "${gelb}Verwende die Cutlist trotz Fehler!${normal}"
+				echo -e "Verwende die Cutlist trotz Fehler!"
 				break
 			else
 				echo "Bitte neue Cutlist waehlen!"
@@ -1475,31 +1428,21 @@ for i in ${input}; do
   		if [ ! -f "$output/$film_ohne_ende-cut.avi" ]; then
 			do_split_merge
   		else
-	 		echo -e "${gelb}Die Ausgabedatei existiert bereits!${normal}"
-	 		if [ $HaltByErrors == "yes" ]; then
-				exit 1
-	 		else
-				continue=1
-				 		fi
-	  		fi
-	   	fi
-	   	if [ "$overwrite" == "yes" ]; then do_split_merge ; fi
-   	fi
+	 		fehler "Die Ausgabedatei existiert bereits!"
+		fi	
+	fi	
+	if [ "$overwrite" == "yes" ]; then do_split_merge ; fi
+fi	
    	if [ "$CutProg" == "avidemux" ] || [ "$CutProg" == "avidemux2" ] || [ "$CutProg" == "avidemux2_cli" ] || [ "$CutProg" == "avidemux2_qt4" ] || [ "$CutProg" == "avidemux2_gtk" ] && [ $continue == "0" ]; then
 		   	if [ "$overwrite" == "no" ]; then
 			  	if [ ! -f "$output/$film_ohne_ende-cut.avi" ]; then
 			 		demux
 				else
-			 		echo -e "${gelb}Die Ausgabedatei existiert bereits!${normal}"
-			 		if [ $HaltByErrors == "yes" ]; then
-							exit 1
-			 		else
-							continue=1
-			 		fi
+			 		fehler "Die Ausgabedatei existiert bereits!"
 				fi
 		   	fi
 		   	if [ "$overwrite" == "yes" ]; then demux ; fi
-   	fi
+	fi	
    	if [ "$UseLocalCutlist" == "no" ] && [ "$bewertung" == "yes" ] && [ "$continue" != "1" ]; then
    		if [ "$play" == "no"  ]; then bewerte_cutlist ; fi
    		if [ "$play" == "yes" ]; then
