@@ -60,7 +60,10 @@ copy=no			# Wenn $toprated=yes, und keine Cutlist gefunden wird, $film nach $out
 # Sie sind fuer die Verwendung des Decoders gedacht.
 email="" 				# Die EMail-Adresse mit der Sie bei OTR registriert sind
 password=""				# Das Passwort mit dem Sie sich bei OTR einloggen
-decoder=$(which otrdecoder)	# Pfad zum decoder. Z.B. /home/benutzer/bin/otrdecoder
+decode=no				# Standard ohne OTRdecoder
+decoder=$(which otrdecoderX)	# Pfad zum decoder. Z.B. /home/benutzer/bin/otrdecoder
+nice=$appdir/bin/nice
+nicestmt="$nice -n 15"
 
 # Diese Variablen werden vom Benutzer gesetzt.
 personalurl=""			#Die persoenliche URL von cutlist.at
@@ -160,10 +163,10 @@ exit 0
 # Informiert Benutzer, ggf. ueber versch. Kanaele
 senduserinfo () {
 	if [ -z "$1" ]; then echo  "senduserinfo: ohne Information aufgerufen" |tee -a $LOGFILE; return ; fi
-	if [ $dsmtextnotify = "on" ] ; then
+	if [ "$dsmtextnotify" == "on" ] ; then
 		/usr/syno/bin/synodsmnotify @administrators "synOTR" "$1"
 	fi
-	if [ $dsmbeepnotify = "on" ] ; then echo 2 > /dev/ttyS1 ; fi ## short beep
+	if [ "$dsmbeepnotify" == "on" ] ; then echo 2 > /dev/ttyS1 ; fi ## short beep
 } ## END senduserinfo ##
 
 
@@ -232,7 +235,7 @@ fehler () { log error "$@"; clean_exit 1 ; }
 #################################################
 #Diese Funktion sucht nach einer neuen Version von OtrCut
 update () {
-	online_version=$(wget -q -O - http://otrcut.siggimania4u.de/version | /usr/bin/tr -d "\r")
+	online_version=$(wget -q -O - http://otrcut.siggimania4u.de/version | tr -d "\r")
 	#online_version="0.0" ## URL funktioniert nicht mehr
 	if [ "$online_version" -gt "$version" ]; then
 		echo "Es ist eine neue Version verfuegbar."
@@ -357,9 +360,9 @@ checkENV () {
 				echo -e "Falsche Eingabe, bitte nochmal:"
 				read TMP	#Lesen der Benutzereingabe nach $TMP
 			done
-			if [ $TMP == n ]; then	#Wenn der Benutzer nein "sagt"
+			if [ "$TMP" == "n" ]; then	#Wenn der Benutzer nein "sagt"
 				fehler "Tempverzeichnis '$tmp' soll nicht erstellt werden."
-			elif [ $TMP == y ]; then	#Wenn der Benutzer ja "sagt"
+			elif [ "$TMP" == "y" ]; then	#Wenn der Benutzer ja "sagt"
 				echo -n "Erstelle Ordner $tmp --> "
 				mkdir "$tmp/otrcut"
 				if [ -d "$tmp/otrcut" ]; then
@@ -419,10 +422,10 @@ check_software () {
 	#Hier wird ueberprueft ob der richtige Pfad zum Decoder angegeben wurde
 	if [ "$decoded" == "yes" ]; then
 		echo -n "Ueberpruefe ob der Decoder-Pfad richtig gesetzt wurde --> "
-		if $decoder -v >> /dev/null; then
-			echo "okay"
+		if [ -x $decoder ]; then
+			echo "OTRdecoder: '$decoder' okay"
 		else
-			fehler "Kann Programm 'otrdecoder' nicht finden"
+			fehler "Kann Programm otrdecoder: '$decoder' nicht finden --> Abbruch"
 		fi
 		if [ -z "$email"	]; then fehler "EMail-Adresse wurde nicht gesetzt."	; fi
 		if [ -z "$password"	]; then fehler "Passwort wurde nicht gesetzt."		; fi
@@ -528,7 +531,7 @@ getlocalcutlist () {
 
 	echo -n "Ueberpruefe ob eine der gefundenen Cutlists zum Film passt --> "
 	for f in $local_cutlists; do
-		OriginalFileSize=$(cat $f | grep OriginalFileSizeBytes | cut -d"=" -f2 | /usr/bin/tr -d "\r")	#Dateigroesse des Films
+		OriginalFileSize=$(cat $f | grep OriginalFileSizeBytes | cut -d"=" -f2 | tr -d "\r")	#Dateigroesse des Films
 		if cat "$f" | grep -q "$film"; then	#Wenn der Dateiname mit ApplyToFile uebereinstimmt
 			echo -e -n "ApplyToFile "
 			goodCount=$(( goodCount + 1 ))
@@ -594,6 +597,7 @@ getcutlist () {
 		filesize=$(ls -l "$film" | awk '{ print $5 }')
 	fi
 	##echo "getcutlist: filesize = $filesize"
+	#echo -ne "Weiter mit RETURN"; read
 	
 	echo -n "Fuehre Suchanfrage anhand der Dateigroesse '$filesize' bei '$server' durch ---> "
 	wget -q -O "$tmp/search.xml" "${server}getxml.php?version=0.9.8.0&ofsb=$filesize"
@@ -617,63 +621,65 @@ getcutlist () {
 	fi
 	
 	array=0
-	cutlist_anzahl=$(grep -c '/cutlist' "$tmp/search.xml" | /usr/bin/tr -d "\r") #Anzahl der gefundenen Cutlists
+	cutlist_anzahl=$(grep -c '/cutlist' "$tmp/search.xml" | tr -d "\r") #Anzahl der gefundenen Cutlists
+	log console "cutlist_anzahl: $cutlist_anzahl"
+echo -n "DEBUG-STOP: Weiter mit RETURN"; read
 	if [ "$cutlist_anzahl" -ge "1" ] && [ "$continue" == "0" ]; then #Wenn mehrere Cutlists gefunden wurden
 		echo ""
 		tail=1
 		while [ "$cutlist_anzahl" -gt "0" ]; do
 				#Name der Cutlist
-				name[$array]=$(grep "<name>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+				name[$array]=$(grep "<name>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | tr -d "\r")
 				#Author der Cutlist
-				author[$array]=$(grep "<author>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+				author[$array]=$(grep "<author>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | tr -d "\r")
 				#Bewertung des Authors
-				ratingbyauthor[$array]=$(grep "<ratingbyauthor>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+				ratingbyauthor[$array]=$(grep "<ratingbyauthor>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | tr -d "\r")
 				#Bewertung der User
-				rating[$array]=$(grep "<rating>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+				rating[$array]=$(grep "<rating>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | tr -d "\r")
 				#Kommentar des Authors
-				comment[$array]=$(grep "<usercomment>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+				comment[$array]=$(grep "<usercomment>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | tr -d "\r")
 				#ID der Cutlist
-				ID[$array]=$(grep "<id>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+				ID[$array]=$(grep "<id>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | tr -d "\r")
 				#Anzahl der Bewertungen
-				ratingcount[$array]=$(grep "<ratingcount>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+				ratingcount[$array]=$(grep "<ratingcount>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | tr -d "\r")
 				#Cutangaben in Sekunden
-				cutinseconds[$array]=$(grep "<withtime>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+				cutinseconds[$array]=$(grep "<withtime>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | tr -d "\r")
 				#Cutangaben in Frames (besser)
-				cutinframes[$array]=$(grep "<withframes>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+				cutinframes[$array]=$(grep "<withframes>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | tr -d "\r")
 				#Filename der Cutlist
-				filename[$array]=$(grep "<filename>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | /usr/bin/tr -d "\r")
+				filename[$array]=$(grep "<filename>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | tail -n$tail | head -n1 | tr -d "\r")
 
-			## interaktive cutlist-Auswahl 
-			if [ "$toprated" == "no" ]; then #Wenn --toprated nicht gesetzt ist
-				if echo $cutlistWithError | grep -q "${ID[$array]}"; then #Wenn Fehler gesetzt ist z.B. EPG-Error oder MissingBeginning
-					echo -ne ""
-				fi
-				echo -n "[$array]"
-				echo " Name: ${name[$array]}"
-				echo " Author: ${author[$array]}"
-				echo " Rating by Author: ${ratingbyauthor[$array]}"
-				if [ -z "$cutlistWithError" ]; then
-					echo -ne ""
-				fi
-				echo " Rating by Users: ${rating[$array]} @ ${ratingcount[$array]} Users"
-				if [ -z "$cutlistWithError" ]; then
-					echo -ne ""
-				fi
-				if [ "${cutinframes[$array]}" == "1" ]; then
-					echo " Cutangabe: Als Frames"
-				fi
-				if [ "${cutinseconds[$array]}" == "1" ] && [ ! "${cutinframes[$array]}" == "1" ]; then
-					echo " Cutangabe: Als Zeit"
-				fi
-				echo " Kommentar: ${comment[$array]}"
-				echo " Filename: ${filename[$array]}"
-				echo " ID: ${ID[$array]}"
-				#echo " Server: ${server[$array]}"
-				echo ""
-				if echo $cutlistWithError | grep -q "${ID[$array]}"; then #Wenn Fehler gesetzt ist z.B. EPG-Error oder MissingBeginning
-					echo ""
-				fi
-			fi
+##			## interaktive cutlist-Auswahl 
+##			if [ "$toprated" == "no" ]; then #Wenn --toprated nicht gesetzt ist
+##				if echo $cutlistWithError | grep -q "${ID[$array]}"; then #Wenn Fehler gesetzt ist z.B. EPG-Error oder MissingBeginning
+##					echo -ne ""
+##				fi
+##				echo -n "[$array]"
+##				echo " Name: ${name[$array]}"
+##				echo " Author: ${author[$array]}"
+##				echo " Rating by Author: ${ratingbyauthor[$array]}"
+##				if [ -z "$cutlistWithError" ]; then
+##					echo -ne ""
+##				fi
+##				echo " Rating by Users: ${rating[$array]} @ ${ratingcount[$array]} Users"
+##				if [ -z "$cutlistWithError" ]; then
+##					echo -ne ""
+##				fi
+##				if [ "${cutinframes[$array]}" == "1" ]; then
+##					echo " Cutangabe: Als Frames"
+##				fi
+##				if [ "${cutinseconds[$array]}" == "1" ] && [ ! "${cutinframes[$array]}" == "1" ]; then
+##					echo " Cutangabe: Als Zeit"
+##				fi
+##				echo " Kommentar: ${comment[$array]}"
+##				echo " Filename: ${filename[$array]}"
+##				echo " ID: ${ID[$array]}"
+##				#echo " Server: ${server[$array]}"
+##				echo ""
+##				if echo $cutlistWithError | grep -q "${ID[$array]}"; then #Wenn Fehler gesetzt ist z.B. EPG-Error oder MissingBeginning
+##					echo ""
+##				fi
+##			fi
 			tail=$((tail + 1))
 			cutlist_anzahl=$((cutlist_anzahl - 1))
 			array=$(( array + 1))
@@ -722,7 +728,7 @@ getcutlist () {
 		id=$(grep "<id>" "$tmp/search.xml" | head -n$cutlist_nummer | tail -n1 | cut -d">" -f2 | cut -d"<" -f1) #ID der best bewertetsten Cutlist
 		num=$(( cutlist_nummer - 1))
 		id_downloaded=$(echo ${ID[$num]})
-		CUTLIST=$(grep "<name>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | head -n$cutlist_nummer | tail -n1 | /usr/bin/tr -d "\r") #Name der Cutlist
+		CUTLIST=$(grep "<name>" "$tmp/search.xml" | cut -d">" -f2 | cut -d"<" -f1 | head -n$cutlist_nummer | tail -n1 | tr -d "\r") #Name der Cutlist
 	fi
 	#	
 	if [ "$toprated" == "no" ] && [ "$continue" == "0" ]; then
@@ -782,7 +788,7 @@ cutlist_error () {
 	#Diese Variable beinhaltet alle moeglichen Fehler
 	errors="EPGError MissingBeginning MissingEnding MissingVideo MissingAudio OtherError"
 	for e in $errors; do
-		error_check=$(cat "$tmp/$CUTLIST" | grep -m1 $e | cut -d"=" -f2 | /usr/bin/tr -d "\r")
+		error_check=$(cat "$tmp/$CUTLIST" | grep -m1 $e | cut -d"=" -f2 | tr -d "\r")
 		if [ "$error_check" == "1" ]; then
 			echo -e "Es wurde ein Fehler gefunden: \"$e\""
 			error_yes=$e
@@ -876,7 +882,7 @@ get_fps () {
 #Hier wird nun die Zeit ins richtige Format fuer avisplit umgerechnet
 time1 () {
 	time=""
-	cut_anzahl=$(cat "$tmp/$CUTLIST" | grep "NoOfCuts" | cut -d"=" -f2 | /usr/bin/tr -d "\r")
+	cut_anzahl=$(cat "$tmp/$CUTLIST" | grep "NoOfCuts" | cut -d"=" -f2 | tr -d "\r")
 	echo "####Auflistung der Cuts####"
 
 	# Wenn das verwendete Format "Zeit" ist:
@@ -887,11 +893,11 @@ time1 () {
 		echo "Es muessen $cut_anzahl Cuts umgerechnet werden."
 		while [ "$cut_anzahl" -gt "0" ]; do
 			#Die Sekunde in der der Cut beginnen soll
-			time_seconds_start=$(cat "$tmp/$CUTLIST" | grep "Start=" | cut -d"=" -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
+			time_seconds_start=$(cat "$tmp/$CUTLIST" | grep "Start=" | cut -d"=" -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | tr -d "\r")
 			echo "Startcut: $time_seconds_start. Sekunde"
 			time=${time}$(date -u -d @$time_seconds_start +%T-)	#Die Sekunden umgerechned in das Format hh:mm:ss
 			#Wie viele Sekunden der Cut dauert
-			time_seconds_ende=$(cat "$tmp/$CUTLIST" | grep "Duration=" | cut -d"=" -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
+			time_seconds_ende=$(cat "$tmp/$CUTLIST" | grep "Duration=" | cut -d"=" -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | tr -d "\r")
 			time_seconds_ende=$(( time_seconds_ende + time_seconds_start )) #Die Sekunde in der der Cut endet
 			echo "Endcut: $time_seconds_ende. Sekunde"
 			time=${time}$(date -u -d @$time_seconds_ende +%T,)	#Die Endsekunde im Format hh:mm:ss
@@ -907,11 +913,11 @@ time1 () {
 		echo "Es muessen $cut_anzahl Cuts umgerechnet werden."
 		while [ $cut_anzahl -gt 0 ]; do
 			# Der Frame bei dem der Cut beginnt
-			startframe=$(cat "$tmp/$CUTLIST" | grep "StartFrame=" | cut -d= -f2 | head -n$head1 | tail -n1 | /usr/bin/tr -d "\r")
+			startframe=$(cat "$tmp/$CUTLIST" | grep "StartFrame=" | cut -d= -f2 | head -n$head1 | tail -n1 | tr -d "\r")
 			echo "Startframe= $startframe"
 			time="${time}$startframe-"
 			# Wie viele Frames dauert der Cut
-			stopframe=$(cat "$tmp/$CUTLIST" | grep "DurationFrames=" | cut -d= -f2 | head -n$head1 | tail -n1 | /usr/bin/tr -d "\r")
+			stopframe=$(cat "$tmp/$CUTLIST" | grep "DurationFrames=" | cut -d= -f2 | head -n$head1 | tail -n1 | tr -d "\r")
 			stopframe=$(( stopframe + startframe ))	# Der Frame bei dem der Cut endet
 			echo "Endframe= $stopframe"
 			time="${time}$stopframe,"	# Auflistung aller Cuts
@@ -926,7 +932,7 @@ time1 () {
 #Hier wird nun die Zeit ins richtige Format fuer avisplit umgerechnet, falls die date-Variante nicht funktioniert
 time2 () {
 	time=""
-	cut_anzahl=$(cat "$tmp/$CUTLIST" | grep "NoOfCuts" | cut -d= -f2 | /usr/bin/tr -d "\r")
+	cut_anzahl=$(cat "$tmp/$CUTLIST" | grep "NoOfCuts" | cut -d= -f2 | tr -d "\r")
 	echo "#####Auflistung der Cuts#####"
 	#########################
 	if [ $format == "zeit" ]; then
@@ -934,7 +940,7 @@ time2 () {
 	   	echo "Es muessen $cut_anzahl Cuts umgerechnet werden"
 	   	while [ $cut_anzahl -gt 0 ]; do
 			#Die Sekunde in der der Cut startet
-		  	time_seconds_start=$(cat "$tmp/$CUTLIST" | grep "Start=" | cut -d= -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
+		  	time_seconds_start=$(cat "$tmp/$CUTLIST" | grep "Start=" | cut -d= -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | tr -d "\r")
 		  	ss=$time_seconds_start	#Setze die Skunden auf $time_seconds_start
 		  	mm=0	#Setze die Minuten auf 0
 		  	hh=0	#Setze die Stunden auf 0
@@ -950,7 +956,7 @@ time2 () {
 		  	echo "Startcut= $time2_start"
 		  	time="${time}${time2_start}-"	#Auflistung aller Zeiten
 			#Sekunden wie lange der Cut dauert
-		  	time_seconds_ende=$(cat "$tmp/$CUTLIST" | grep "Duration=" | cut -d= -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
+		  	time_seconds_ende=$(cat "$tmp/$CUTLIST" | grep "Duration=" | cut -d= -f2 | head -n$head1 | tail -n1 | cut -d"." -f1 | tr -d "\r")
 			time_seconds_ende=$(( time_seconds_ende + time_seconds_start))	#Die Sekunde in der der Cut endet
 		  	ss=$time_seconds_ende	#Setze die Sekunden auf $time_seconds_ende
 		  	mm=0	#Setze die Minuten auf 0
@@ -976,11 +982,11 @@ time2 () {
 		echo "Es muessen $cut_anzahl Cuts umgerechnet werden"
 		while [ $cut_anzahl -gt 0 ]; do
 			#Der Frame bei dem der Cut beginnt
-			startframe=$(cat "$tmp/$CUTLIST" | grep "StartFrame=" | cut -d= -f2 | head -n$head1 | tail -n1 | /usr/bin/tr -d "\r")
+			startframe=$(cat "$tmp/$CUTLIST" | grep "StartFrame=" | cut -d= -f2 | head -n$head1 | tail -n1 | tr -d "\r")
 			echo "Startframe= $startframe"
 			time="${time}$startframe-"	#Auflistung der Cuts
 			#Die Frames wie lange der Cut dauert
-			stopframe=$(cat "$tmp/$CUTLIST" | grep "DurationFrames=" | cut -d= -f2 | head -n$head1 | tail -n1 | /usr/bin/tr -d "\r")
+			stopframe=$(cat "$tmp/$CUTLIST" | grep "DurationFrames=" | cut -d= -f2 | head -n$head1 | tail -n1 | tr -d "\r")
 			stopframe=$(( stopframe + startframe))	#Der Frame bei dem der Cut endet
 			echo "Endframe= $stopframe"
 			time="${time}$stopframe,"	#Auflistung der Cuts
@@ -995,12 +1001,12 @@ time2 () {
 #Hier wird nun, falls aviplit/avimerge gewaehlt wurde, avisplit und avimerge gestartet
 do_split_merge () {
 	echo "Uebergebe die Cuts an avisplit/avimerge"
-	if [ $decoded == "yes" ]; then
+	if [ "$decoded" == "yes" ]; then
 		#Hier wird avisplit gestartet, avimerge wird on-the-fly ueber den Parameter -c gestartet
-		$appdir/bin/nice -n 15 $appdir/bin/avisplit -i "$output/$film" -o "$outputfile" -t $time -c
+		$nicestmt $appdir/bin/avisplit -i "$output/$film" -o "$outputfile" -t $time -c
 	else
 		#Hier wird avisplit gestartet, avimerge wird on-the-fly ueber den Parameter -c gestartet
-		$appdir/bin/nice -n 15 $appdir/bin/avisplit -i "$film" -o "$outputfile" -t $time -c
+		$nicestmt $appdir/bin/avisplit -i "$film" -o "$outputfile" -t $time -c
 	fi
 	if [ -f "$outputfile" ]; then
 		echo -e "outputfile '$outputfile' wurde erstellt"
@@ -1027,10 +1033,10 @@ do_split_merge () {
 		if [ "$delete" == "yes" ]; then
 			echo "Loesche Quellvideo."
 			if [ $decoded == "yes" ]; then
-				$appdir/bin/nice -n 15 rm -rf "$output/$film"
+				$nicestmt rm -rf "$output/$film"
 			else
-				#$appdir/bin/nice -n 15 rm -rf "$film"
-				$appdir/bin/nice -n 15 mv "$film" "$delfolder"
+				#$nicestmt rm -rf "$film"
+				$nicestmt mv "$film" "$delfolder"
 			fi
 		fi
 	else
@@ -1063,7 +1069,7 @@ EOF
 
 #################################################
 # wird in demux verwendet ??? Rueckbau nach demux ???
-ende () {
+demux_ende_old () {
 fpsjs=$(($fps*1000))
 cat << EOF
 
@@ -1090,10 +1096,10 @@ setSuccess(app.save("$outputfile"));
 
 //End of script
 EOF
-} ## END ende  ##
+} ## END demux_ende_old  ##
 
 #################################################
-ende_new () {
+demux_ende_new () {
 fpsjs=$(($fps*1000))
 cat << EOF
 
@@ -1120,7 +1126,7 @@ setSuccess(app.save("$outputfile"));
 
 //End of script
 EOF
-} ## END ende_new ##
+} ## END demux_ende_new ##
 
 #################################################
 # Hier wird nun, fals avidemux gewaehlt wurde, avidemux gestartet
@@ -1143,16 +1149,16 @@ demux () {
 	
 	start2 >> "$tmp/avidemux.js"
 	
-	cut_anzahl=$(cat "$tmp/$CUTLIST" | grep "NoOfCuts" | cut -d= -f2 | /usr/bin/tr -d "\r")
+	cut_anzahl=$(cat "$tmp/$CUTLIST" | grep "NoOfCuts" | cut -d= -f2 | tr -d "\r")
 	echo "#####Auflistung der Cuts#####"
 	if [ "$format" = "zeit" ]; then
 		head2=1
 		echo "Es muessen $cut_anzahl Cuts umgerechnet werden"
 		while [ "$cut_anzahl" -gt 0 ]; do
-			time_seconds_start=$(cat "$tmp/$CUTLIST" | grep "Start=" | cut -d= -f2 | head -n$head2 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
+			time_seconds_start=$(cat "$tmp/$CUTLIST" | grep "Start=" | cut -d= -f2 | head -n$head2 | tail -n1 | cut -d"." -f1 | tr -d "\r")
 			time_frame_start=$(( time_seconds_start * fps))
 			  	echo "Startframe= $time_frame_start"
-			  	time_seconds_dauer=$(cat "$tmp/$CUTLIST" | grep "Duration=" | cut -d= -f2 | head -n$head2 | tail -n1 | cut -d"." -f1 | /usr/bin/tr -d "\r")
+			  	time_seconds_dauer=$(cat "$tmp/$CUTLIST" | grep "Duration=" | cut -d= -f2 | head -n$head2 | tail -n1 | cut -d"." -f1 | tr -d "\r")
 				time_frame_dauer=$(( time_seconds_dauer * fps))
 			  	echo "Dauer= $time_frame_dauer"
 			  	echo "app.addSegment(0,$time_frame_start,$time_frame_dauer);" >> "$tmp/avidemux.js"
@@ -1163,9 +1169,9 @@ demux () {
 		head2=1
 			echo "Es muessen $cut_anzahl Cuts umgerechnet werden"
 			while [ $cut_anzahl -gt 0 ]; do
-				startframe=$(cat "$tmp/$CUTLIST" | grep "StartFrame=" | cut -d= -f2 | head -n$head2 | tail -n1 | /usr/bin/tr -d "\r")
+				startframe=$(cat "$tmp/$CUTLIST" | grep "StartFrame=" | cut -d= -f2 | head -n$head2 | tail -n1 | tr -d "\r")
 			  	echo "Startframe= $startframe"
-			  	dauerframe=$(cat "$tmp/$CUTLIST" | grep "DurationFrames=" | cut -d= -f2 | head -n$head2 | tail -n1 | /usr/bin/tr -d "\r")
+			  	dauerframe=$(cat "$tmp/$CUTLIST" | grep "DurationFrames=" | cut -d= -f2 | head -n$head2 | tail -n1 | tr -d "\r")
 			  	echo "Dauer= $dauerframe"
 			  	echo "app.addSegment(0,$startframe,$dauerframe);" >> "$tmp/avidemux.js"
 				head2=$(( head2 + 1))
@@ -1194,25 +1200,25 @@ demux () {
 	fi
 
 	if [ "$ad_version" == "old" ]; then
-		ende >> "$tmp/avidemux.js"
+		demux_ende_old >> "$tmp/avidemux.js"
 	else
-		ende_new >> "$tmp/avidemux.js"
+		demux_ende_new >> "$tmp/avidemux.js"
 	fi
 	
 	echo "Uebergebe die Cuts nun an avidemux"
 	#if [ "$aspect" == "43" ]; then
 	if [ "$smart" == "yes" ]; then
 		if [ "$verbose" == "yes" ]; then
-			$appdir/bin/nice -n 15 $CutProg --nogui --force-smart --run "$tmp/avidemux.js" --quit
+			$nicestmt $CutProg --nogui --force-smart --run "$tmp/avidemux.js" --quit
 		else
-			$appdir/bin/nice -n 15 $CutProg --nogui --force-smart --run "$tmp/avidemux.js" --quit >> /dev/null
+			$nicestmt $CutProg --nogui --force-smart --run "$tmp/avidemux.js" --quit >> /dev/null
 		fi
 	#elif [ "$aspect" == "169" ]; then
 	elif [ "$smart" == "no" ]; then
 		if [ "$verbose" == "yes" ]; then
-			$appdir/bin/nice -n 15 $CutProg --nogui --run "$tmp/avidemux.js" --quit
+			$nicestmt $CutProg --nogui --run "$tmp/avidemux.js" --quit
 		else
-			$appdir/bin/nice -n 15 $CutProg --nogui --run "$tmp/avidemux.js" --quit >> /dev/null
+			$nicestmt $CutProg --nogui --run "$tmp/avidemux.js" --quit >> /dev/null
 		fi
 	fi
 	## Check, ob outputfile ordentlich generiert wurde
@@ -1221,11 +1227,11 @@ demux () {
 		 	echo -e " wurde erstellt"
 		if [ "$delete" == "yes" ]; then
 			echo "Loesche Quellvideo."
-			if [ $decoded == "yes" ]; then
-				$appdir/bin/nice -n 15 rm -rf "$output/$film"
+			if [ "$decoded" == "yes" ]; then
+				$nicestmt rm -rf "$output/$film"
 			else
-				#$appdir/bin/nice -n 15 rm -rf "$film"
-				$appdir/bin/nice -n 15 mv "$film" "$delfolder/"
+				#$nicestmt rm -rf "$film"
+				$nicestmt mv "$film" "$delfolder/"
 			fi
 		fi
 	else
@@ -1308,7 +1314,7 @@ decode_otrkey () {
 			email_checked=yes
 		fi
 		echo "Decodiere Datei --> "
-		$appdir/bin/nice -n 15 $decoder -e "$email" -p "$password" -q -f -i "$OTRKEYDatei" -o "$output"
+		$nicestmt $decoder -e "$email" -p "$password" -q -f -i "$OTRKEYDatei" -o "$output"
 		decoded=yes
 	else
 		decoded=no
@@ -1378,10 +1384,11 @@ while [ ! -z "$1" ]; do
 done
 if [ $VERBOSE -gt 2 ]; then DEBUG=true ; else  DEBUG=false ; fi
 
+
 ##################
 ## Lade synOTR Konfigurationsfile, fuer Pfade usw.
 . $synotrconf ### ??? noch besser verankern, z.B. fuer Standaloneaufruf
-echo "verboselevel: verbose=$verbose -- VERBOSE=$VERBOSE -- DEBUG=$DEBUG"
+log info "verboselevel: verbose=$verbose -- VERBOSE=$VERBOSE -- DEBUG=$DEBUG"
 
 
 

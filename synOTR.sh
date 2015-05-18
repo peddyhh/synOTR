@@ -70,6 +70,7 @@ export PATH
 # STD-Pfad zu DSM-ffmpeg (oder anderer gewünschter Version):
 ffmpeg="/usr/syno/bin/ffmpeg"
 bash="$APPDIR/bin/bash"
+#bash="/bin/ash"
 touch="$APPDIR/bin/touch"
 OTRcut_SH=$APPDIR/OTRcut.sh
 
@@ -102,8 +103,8 @@ RC=0	## globaler Return-Code
 ## Konfigurationsdatei
 ## - kann STD-Parameter ueberschreiben
 #######################################
-CONFIG=synOTR.conf
-. ./$CONFIG
+CONFIG=$workdir/synOTR.conf
+. $CONFIG
 if [ $VERBOSE -gt 2 ]; then DEBUG=true ; else  DEBUG=false ; fi
 
 ## Korrektur der Verzeichnisberzeichnungen
@@ -259,7 +260,8 @@ OTRcut () {
 			continue		# naechste Datei
 		fi
 		## das eigentliche Schneiden
-   		$DRY $bash $workdir/app/OTRcut.sh --force-smart -a -e --delete --toprated -i "$Datei" -o "$destdir/" --deldir "$OTRKEYdeldir" --wd $workdir/$CONFIG #--lj $lastjob
+   		#$DRY $bash $OTRcut_SH --force-smart -a -e --delete --toprated -i "$Datei" -o "$destdir/" --deldir "$OTRKEYdeldir" --wd $CONFIG #--lj $lastjob
+   		$DRY $bash $OTRcut_SH --force-smart -a -e          --toprated -i "$Datei" -o "$destdir/" --deldir "$OTRKEYdeldir" --wd $CONFIG #--lj $lastjob
 	done
 } ## END OTRcut ##
 
@@ -594,11 +596,11 @@ $OTRAVI2MP4ACTIVE && lastjob=3
 if [ ! -d "$OTRKEYdir"		] ; then fehler "Verzeichnis OTRKEYdir '$OTRKEYdir' fehlt, bitte anpassen oder anlegen."		; fi
 if [ ! -d "$OTRKEYdeldir"	] ; then fehler	"Verzeichnis OTRKEYdeldir '$OTRKEYdeldir' fehlt, bitte anpassen oder anlegen."	; fi
 if [ ! -d "$destdir"		] ; then fehler "Verzeichnis destdir '$destdir' fehlt, bitte anpassen oder anlegen."			; fi
-if [ ! -d "$decodedir"		] ; then fehler "Verzeichnis decodedir '$decodedir' fehlt, bitte anpassen oder anlegen."	; fi
+if [ ! -d "$decodedir"		] ; then fehler "Verzeichnis decodedir '$decodedir' fehlt, bitte anpassen oder anlegen."		; fi
 if [ ! -x "$ffmpeg"			] ; then fehler "Programm ffmpeg '${ffmpeg}' fehlt, bitte Pfad im Skript anpassen"				; fi
-if [ ! -x "$bash"			] ; then fehler "Programm bash '${bash}' fehlt, bitte Pfad im Skript anpassen"				; fi
+if [ ! -x "$bash"			] ; then fehler "Programm bash '${bash}' fehlt, bitte Pfad im Skript anpassen"					; fi
 if [ ! -x "$touch"			] ; then fehler "Programm touch '${touch}' fehlt, bitte Pfad im Skript anpassen"				; fi
-if [ ! -x "$OTRcut_SH"		] ; then fehler "Shellskript OTRcut_SH '${OTRcut_SH}' fehlt, bitte Pfad im Skript anpassen"				; fi
+if [ ! -x "$OTRcut_SH"		] ; then fehler "Shellskript OTRcut_SH '${OTRcut_SH}' fehlt, bitte Pfad im Skript anpassen"		; fi
 if $OTRCUTACTIVE ; then decodedir="$destdir" ; fi
 $DEBUG	&&	printf "   OTRKEYdir ist:\t%s\n"	$OTRKEYdir		| tee -a $LOGFILE
 $DEBUG	&&	printf "OTRKEYdeldir ist:\t%s\n"	$OTRKEYdeldir	| tee -a $LOGFILE
